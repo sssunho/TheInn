@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <list>
 
 using namespace std;
 
@@ -25,42 +26,50 @@ private:
 		int x;
 		int y;
 	};
-	vector<SpriteData> animationQue;
+
+	typedef vector<SpriteData> FrameData;
+	typedef pair<string,vector<FrameData>> AnimationData;
+
+	string animationName;
 	int curFrame;
-	int frameCount;
+	int maxFrame;
 	bool playing;
 	bool repeat;
-	
+		
 	Animation& operator=(const Animation& ref)
 	{
-		animationQue = ref.animationQue;
+		animationName = ref.animationName;
 		curFrame = 0;
-		frameCount = 0;
-		playing = false;
+		maxFrame = 0;
+		playing = true;
 		repeat = false;
 	}
 
-	Animation() : animationQue(), curFrame(0), frameCount(0), playing(false), repeat(false) {}
+	Animation() : animationName(), curFrame(0), maxFrame(0), playing(true), repeat(false) {}
 
 	void update();
 
 public:
 	Animation(const Animation& ref)
 	{
-		animationQue = ref.animationQue;
+		animationName = ref.animationName;
 		curFrame = 0;
-		frameCount = 0;
-		playing = false;
+		maxFrame = 0;
+		playing = true;
 		repeat = false;
 	}
 
-	void play();
-	void pause();
+	void release() { playing = false; }
+
 	void draw(HDC& hdc, int x, int y);
 };
 
+
+
 class AnimationManager
 {
+	friend class Animation;
+
 private:
 
 	AnimationManager();
@@ -68,8 +77,8 @@ private:
 	AnimationManager& operator=(const AnimationManager& ref) {}
 	~AnimationManager() {};
 
-	map<string, vector<Animation::SpriteData>> animationMap;
-	
+	map<string, Animation::AnimationData> animationDataMap;
+	list<Animation*> animationInstArr;
 
 public:
 	static AnimationManager& getInstance()
@@ -78,8 +87,9 @@ public:
 		return s;
 	}
 
-	Animation getAnimation(string name);
+	Animation* getAnimation(string name);
 
+	void update();
 
 };
 
