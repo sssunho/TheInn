@@ -1,237 +1,214 @@
-﻿// mapEditor.cpp : 애플리케이션에 대한 진입점을 정의합니다.
-//
-
-#include "framework.h"
+﻿#include "framework.h"
 #include "mapEditor.h"
+#include "gridMap.h"
+#include <commdlg.h>
+#include <string>
+#include <map>
 
-#define MAX_LOADSTRING 100
+using namespace std;
 
-// 전역 변수:
-HINSTANCE hInst;                                // 현재 인스턴스입니다.
-WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
-WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+using namespace Gdiplus;
 
-HWND ghMainWnd;
-HWND ghEditWnd;
-HWND ghTileWnd;
+HINSTANCE hInst;
 
-// 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+extern map<HWND, TileSetEditor*> tileSetEditorMap;
 
-LRESULT CALLBACK    EditProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK    TileProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK EditWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK TileWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+HWND hEditWnd;
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: 여기에 코드를 입력합니다.
+	ULONG_PTR gpToken;
+	GdiplusStartupInput gpsi;
 
-    // 전역 문자열을 초기화합니다.
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_MAPEDITOR, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+	if (GdiplusStartup(&gpToken, &gpsi, NULL) != Ok) return 0;
 
-    // 애플리케이션 초기화를 수행합니다:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
-
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAPEDITOR));
-
-    MSG msg;
-
-    // 기본 메시지 루프입니다:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
-
-    return (int) msg.wParam;
-}
-
-
-
-//
-//  함수: MyRegisterClass()
-//
-//  용도: 창 클래스를 등록합니다.
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-    WNDCLASSEXW wcex;
-
-    wcex.cbSize = sizeof(WNDCLASSEX);
-
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAPEDITOR));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MAPEDITOR);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 	
-	if (!RegisterClassExW(&wcex))
-		return false;
+	HWND hwnd;
+	MSG msg;
+	WNDCLASS WndClass;
+	hInst = hInstance;
+	WndClass.style = CS_HREDRAW | CS_VREDRAW;
+	WndClass.lpfnWndProc = FrameWndProc;
+	WndClass.cbClsExtra = 0;
+	WndClass.cbWndExtra = 0;
+	WndClass.hInstance = hInstance;
+	WndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	WndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	WndClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+	WndClass.lpszMenuName = MAKEINTRESOURCEW(IDC_MAPEDITOR);
+	WndClass.lpszClassName = _T("Frame Window");
+	RegisterClass(&WndClass);
+	WndClass.lpfnWndProc = EditWndProc;
+	WndClass.lpszMenuName = NULL;
+	WndClass.lpszClassName = _T("Edit Window");
+	RegisterClass(&WndClass);
+	WndClass.lpfnWndProc = TileWndProc;
+	WndClass.lpszMenuName = NULL;
+	WndClass.lpszClassName = _T("Tile Window");
+	RegisterClass(&WndClass);
 
-	wcex.lpfnWndProc = EditProc;
-	wcex.lpszClassName = L"EditWindow";
-	wcex.lpszMenuName = NULL;
-	if (!RegisterClassExW(&wcex))
-		return false;
+	hwnd = CreateWindow(
+		_T("Frame Window"),
+		_T("MDI Programming"),
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		NULL,
+		NULL,
+		hInstance,
+		NULL
+	);
 
-	wcex.lpfnWndProc = TileProc;
-	wcex.lpszClassName = L"TileWindow";	
-	
-    return RegisterClassExW(&wcex);
+	ShowWindow(hwnd, nCmdShow);
+	UpdateWindow(hwnd);
+
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	GdiplusShutdown(gpToken);
+
+	return (int)msg.wParam;
 }
 
-//
-//   함수: InitInstance(HINSTANCE, int)
-//
-//   용도: 인스턴스 핸들을 저장하고 주 창을 만듭니다.
-//
-//   주석:
-//
-//        이 함수를 통해 인스턴스 핸들을 전역 변수에 저장하고
-//        주 프로그램 창을 만든 다음 표시합니다.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-   hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
+	static HWND hwndClient;
+	CLIENTCREATESTRUCT clientcreate;
+	HWND hwndChild;
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-
-   ghMainWnd = hWnd;
-
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-
-   return TRUE;
-}
-
-//
-//  함수: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  용도: 주 창의 메시지를 처리합니다.
-//
-//  WM_COMMAND  - 애플리케이션 메뉴를 처리합니다.
-//  WM_PAINT    - 주 창을 그립니다.
-//  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
-//
-//
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	static RECT rectView;
-    switch (message)
-    {
-		
+	switch (message)
+	{
 	case WM_CREATE:
-		GetClientRect(hWnd, &rectView);
-		ghEditWnd = CreateWindowEx(WS_EX_CLIENTEDGE, L"EditWindow", NULL, WS_CHILD | WS_VISIBLE, 0, 0, 100, 100, hWnd, NULL, hInst, NULL);
-		ghTileWnd = CreateWindowEx(WS_EX_CLIENTEDGE, L"TileWindow", NULL, WS_CHILD | WS_VISIBLE, 110, 0, 100, 100, hWnd, NULL, hInst, NULL);
+	{
+		clientcreate.hWindowMenu = GetSubMenu(GetMenu(hwnd), 0);
+		clientcreate.idFirstChild = 100;
+		hwndClient = CreateWindow(
+			_T("MDICLIENT"),
+			NULL,
+			WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE,
+			0, 0, 0, 0,
+			hwnd,
+			NULL,
+			hInst,
+			(LPSTR)&clientcreate);
+
+		ShowWindow(hwndClient, SW_SHOW);
+		return 0;
+	}
+
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_NEW:
+		{
+			CreateMDIChild(hwndClient, L"Edit Window");
+		}
+			return 0;
+
+		case ID_NEWTILE:
+			loadTileSet(hwnd, hwndClient);
+			return 0;
+		}
 		break;
 
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // 메뉴 선택을 구문 분석합니다:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-            EndPaint(hWnd, &ps);
-        }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
+	}
+
+	return DefFrameProc(hwnd, hwndClient, message, wParam, lParam);
 }
 
+LRESULT CALLBACK EditWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	int i = 0;
+	switch (message)
+	{
+	case WM_CREATE:
+		break;
 
-LRESULT CALLBACK EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+	case WM_LBUTTONDOWN:
+		i = 1234;
+		break;
+
+	case WM_MOVE:
+		break;
+
+	case WM_DESTROY:
+		return 0;
+
+	}
+
+	return DefMDIChildProc(hwnd, message, wParam, lParam);
+}
+
+LRESULT CALLBACK TileWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
 	case WM_CREATE:
 		break;
 
-	case WM_DESTROY:
-		break;
-	}
-	return DefMDIChildProc(hWnd, message, wParam, lParam);
-}
-
-LRESULT CALLBACK TileProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
+	case WM_MOVE:
 	{
-	case WM_CREATE:
+		if (tileSetEditorMap.find(hwnd) != tileSetEditorMap.end())
+		{
+			HDC hdc = GetDC(hwnd);
+			tileSetEditorMap[hwnd]->renderTileSet(hdc);
+			ReleaseDC(hwnd, hdc);
+		}
+	}
+		break;
+
+	case WM_MOUSEMOVE:
+
+		if (tileSetEditorMap.find(hwnd) != tileSetEditorMap.end())
+		{
+			HDC hdc = GetDC(hwnd);
+			tileSetEditorMap[hwnd]->renderSelection(hdc, POINT({ LOWORD(lParam), HIWORD(lParam) }));
+			ReleaseDC(hwnd, hdc);
+
+		}
+		break;
+
+	case WM_LBUTTONDOWN:
+		if (tileSetEditorMap.find(hwnd) != tileSetEditorMap.end())
+		{
+			tileSetEditorMap[hwnd]->selectTile(POINT({ LOWORD(lParam), HIWORD(lParam) }));
+		}
 		break;
 
 	case WM_DESTROY:
-		break;
+		tileSetEditorMap.erase(hwnd);
+		return 0;
+
 	}
-	return DefMDIChildProc(hWnd, message, wParam, lParam);
+
+	return DefMDIChildProc(hwnd, message, wParam, lParam);
 }
 
-// 정보 대화 상자의 메시지 처리기입니다.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+HWND CreateMDIChild(HWND hWndClient, const WCHAR* className)
 {
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
+	MDICREATESTRUCT mdicreate;
+	mdicreate.szClass = className;
+	mdicreate.szTitle = className;
+	mdicreate.hOwner = hInst;
+	mdicreate.x = CW_USEDEFAULT;
+	mdicreate.y = CW_USEDEFAULT;
+	mdicreate.cx = CW_USEDEFAULT;
+	mdicreate.cy = CW_USEDEFAULT;
+	mdicreate.style = 0;
+	mdicreate.lParam = 0;
+	return (HWND)SendMessage(hWndClient, WM_MDICREATE, 0, (LPARAM)(LPMDICREATESTRUCT)&mdicreate);
 }
