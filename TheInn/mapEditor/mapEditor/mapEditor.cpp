@@ -6,6 +6,8 @@
 #include <fstream>
 #include <vector>
 
+#include <time.h>
+
 using namespace std;
 using namespace Gdiplus;
 
@@ -26,51 +28,73 @@ MapEditor::MapEditor(HWND main, HWND tileset, const std::wstring path) :
 		tileWnd = new TilesetEditor(tileset, spritePath);
 		mapdataFile >> nx >> ny;
 
-		layer[0] = new Bitmap(nx * TILE_PIXEL, ny* TILE_PIXEL, PixelFormat64bppARGB);
-		layer[1] = new Bitmap(nx * TILE_PIXEL, ny* TILE_PIXEL, PixelFormat64bppARGB);
-		layer[2] = new Bitmap(nx * TILE_PIXEL, ny* TILE_PIXEL, PixelFormat64bppARGB);
+		layer[0] = new Bitmap(nx * TILE_PIXEL, ny* TILE_PIXEL, PixelFormat32bppARGB);
+		layer[1] = new Bitmap(nx * TILE_PIXEL, ny* TILE_PIXEL, PixelFormat32bppARGB);
+		layer[2] = new Bitmap(nx * TILE_PIXEL, ny* TILE_PIXEL, PixelFormat32bppARGB);
+
+		Graphics canvas0(layer[0]);
+		Graphics canvas1(layer[1]);
+		Graphics canvas2(layer[2]);
+
+		layerData[0].resize(nx * ny);
+		layerData[1].resize(nx * ny);
+		layerData[2].resize(nx * ny);
+
+		POINT start;
+		Rect drawDest = { 0,0,TILE_PIXEL,TILE_PIXEL };
+
+		int t = clock();
+
+		int k = 0;
 		for(int i = 0 ; i < ny; i++)
 			for (int j = 0; j < nx; j++)
 			{
-				POINT start;
+				drawDest.X = j * TILE_PIXEL;
+				drawDest.Y = i * TILE_PIXEL;
 				mapdataFile >> start.x >> start.y;
-				layerData[0].push_back(POINT({ start.x, start.y }));
-				Graphics canvas0(layer[0]);
+				layerData[0][k++] = POINT({ start.x, start.y });
 				canvas0.DrawImage(tileWnd->getSprite(),
-					Rect({ j*TILE_PIXEL, i*TILE_PIXEL, TILE_PIXEL, TILE_PIXEL }),
+					drawDest,
 					start.x*TILE_PIXEL, (start.y - 1)*TILE_PIXEL,
 					TILE_PIXEL, TILE_PIXEL,
 					UnitPixel
 				);
 			}
+
+		k = 0;
 		for (int i = 0; i < ny; i++)
 			for (int j = 0; j < nx; j++)
 			{
-				POINT start;
+				int k = 0;
+				drawDest.X = j * TILE_PIXEL;
+				drawDest.Y = i * TILE_PIXEL;
 				mapdataFile >> start.x >> start.y;
-				layerData[1].push_back(POINT({ start.x, start.y }));
-				Graphics canvas0(layer[1]);
-				canvas0.DrawImage(tileWnd->getSprite(),
-					Rect({ j*TILE_PIXEL, i*TILE_PIXEL, TILE_PIXEL, TILE_PIXEL }),
+				layerData[0][k++] = POINT({ start.x, start.y });
+				canvas1.DrawImage(tileWnd->getSprite(),
+					drawDest,
 					start.x*TILE_PIXEL, (start.y - 1)*TILE_PIXEL,
 					TILE_PIXEL, TILE_PIXEL,
 					UnitPixel
 				);
 			}
+
+		k = 0;
 		for (int i = 0; i < ny; i++)
 			for (int j = 0; j < nx; j++)
 			{
-				POINT start;
+				int k = 0;
+				drawDest.X = j * TILE_PIXEL;
+				drawDest.Y = i * TILE_PIXEL;
 				mapdataFile >> start.x >> start.y;
-				layerData[2].push_back(POINT({ start.x, start.y }));
-				Graphics canvas0(layer[2]);
-				canvas0.DrawImage(tileWnd->getSprite(),
-					Rect({ j*TILE_PIXEL, i*TILE_PIXEL, TILE_PIXEL, TILE_PIXEL }),
+				layerData[0][k++] = POINT({ start.x, start.y });
+				canvas2.DrawImage(tileWnd->getSprite(),
+					drawDest,
 					start.x*TILE_PIXEL, (start.y - 1)*TILE_PIXEL,
 					TILE_PIXEL, TILE_PIXEL,
 					UnitPixel
 				);
 			}
+		t = clock() - t;
 		mapdataFile.close();
 	}
 }
@@ -130,6 +154,8 @@ void MapEditor::drawTile(POINT mousePos)
 	if(selectedLayer == 0)
 		g.FillRectangle(&SolidBrush(Color(255, 255, 255)), dest);
 
+	layerData[selectedLayer][tileCoord.x + tileCoord.y*nx] = srcCoord;
+
 	if (srcCoord == POINT({ 0, 0 }))
 		return;
 
@@ -139,13 +165,11 @@ void MapEditor::drawTile(POINT mousePos)
 		UnitPixel
 	);
 
-	layerData[selectedLayer][tileCoord.x + tileCoord.y*nx] = srcCoord;
 }
 
 void MapEditor::setSize(int x, int y)
 {
 	Bitmap* newLayer[3];
-	nx = x; ny = y;
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -155,7 +179,16 @@ void MapEditor::setSize(int x, int y)
 			0, 0, layer[i]->GetWidth(), layer[i]->GetHeight(), UnitPixel);
 		delete layer[i];
 		layer[i] = newLayer[i];
+		vector<POINT> newLayerData(x * y);
+
+		for (int j = 0; j < layerData[i].size(); j++)
+		{
+			newLayerData[(j / nx)*x + (j%nx)] = layerData[i][j];
+		}
+
+		layerData[i] = newLayerData;
 	}
+	nx = x; ny = y;
 }
 
 void MapEditor::setViewPoint(POINT p)

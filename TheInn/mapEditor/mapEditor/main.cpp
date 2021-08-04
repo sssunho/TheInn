@@ -7,10 +7,13 @@
 #include "wndControl.h"
 #include "tileSetEditor.h"
 #include "pointVector.h"
+#include <vector>
+#include <string>
 
 #define MAX_LOADSTRING 100
 
 using namespace Gdiplus;
+using namespace std;
 
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
@@ -49,6 +52,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 {
 	ULONG_PTR gpToken;
 	GdiplusStartupInput gpsi;
+
 
 	if (GdiplusStartup(&gpToken, &gpsi, NULL) != Ok) return 0;
 
@@ -232,8 +236,9 @@ LRESULT CALLBACK FrameWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		KillTimer(hWnd, 1);
         PostQuitMessage(0);
         break;
+
     }
-	return DefFrameProc(hWnd, hwndClient, message, wParam, lParam);
+	DefFrameProc(hWnd, hwndClient, message, wParam, lParam);
 }
 // 정보 대화 상자의 메시지 처리기입니다.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -259,7 +264,6 @@ LRESULT CALLBACK MapEditFrameProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 {
 	static RECT clientRect;
 	static HWND hLayerBtn[3];
-	int i;
 	switch (message)
 	{
 	case WM_CREATE:
@@ -385,7 +389,6 @@ LRESULT CALLBACK MapEditMainProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 
 LRESULT CALLBACK MapEditTileSetProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	TilesetEditor* editor;
 	switch (message)
 	{
 	case WM_CREATE:

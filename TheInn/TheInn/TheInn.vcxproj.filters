@@ -36,6 +36,18 @@
     <ClInclude Include="animator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="map.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="gameObject.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="pointVector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="wndControl.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TheInn.cpp">
@@ -48,6 +60,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="animator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="map.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="gameObject.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="pointVector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="wndControl.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

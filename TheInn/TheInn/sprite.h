@@ -12,6 +12,7 @@ using std::map;
 using std::string;
 
 class SpriteManager;
+class MapManager;
 
 class Sprite
 {
@@ -46,8 +47,9 @@ public:
 
 class SpriteManager
 {
-private:
+	friend class MapManager;
 
+private:
 	SpriteManager();
 	SpriteManager(const SpriteManager& ref) {}
 	SpriteManager& operator=(const SpriteManager& ref) {}
@@ -55,6 +57,10 @@ private:
 
 	map<string, map<string, Rect>> dataMap;
 	map<string, Image*> imageMap;
+	map<string, Image*> tilesetMap;
+
+	void loadImage(std::wstring path, std::string name);
+	Gdiplus::Image* getTilesetSprite(std::string name) { return tilesetMap[name]; };
 
 public:
 	static SpriteManager& getInstance()

@@ -35,6 +35,7 @@ private:
 	int maxFrame;
 	bool playing;
 	bool repeat;
+	bool collapse;
 		
 	Animation& operator=(const Animation& ref)
 	{
@@ -43,9 +44,12 @@ private:
 		maxFrame = 0;
 		playing = true;
 		repeat = false;
+		collapse = true;
 	}
 
-	Animation() : animationName(), curFrame(0), maxFrame(0), playing(true), repeat(false) {}
+	Animation() : 
+		animationName(), curFrame(0), maxFrame(0), 
+		playing(true), repeat(false), collapse(true) {}
 
 	void update();
 
@@ -62,6 +66,8 @@ public:
 	void release() { playing = false; }
 
 	void draw(HDC& hdc, int x, int y);
+
+	void setRepeat(bool flag) { repeat = flag; }
 };
 
 

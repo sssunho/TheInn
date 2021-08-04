@@ -163,6 +163,7 @@ void TilesetEditor::save()
 	if (file.is_open())
 	{
 		file << spriteName << L"\n";
+		file << tileData[0].size() << ' ' << tileData.size() << '\n';
 		for (int i = 0; i < tileData.size(); i++)
 		{
 			for (int j = 0; j < tileData[0].size(); j++)

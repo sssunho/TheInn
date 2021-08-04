@@ -153,17 +153,25 @@
   <ItemGroup>
     <ClInclude Include="animator.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="gameObject.h" />
     <ClInclude Include="gameplay.h" />
+    <ClInclude Include="map.h" />
+    <ClInclude Include="pointVector.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="sprite.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TheInn.h" />
+    <ClInclude Include="wndControl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="animator.cpp" />
+    <ClCompile Include="gameObject.cpp" />
     <ClCompile Include="gameplay.cpp" />
+    <ClCompile Include="map.cpp" />
+    <ClCompile Include="pointVector.cpp" />
     <ClCompile Include="sprite.cpp" />
     <ClCompile Include="TheInn.cpp" />
+    <ClCompile Include="wndControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheInn.rc" />

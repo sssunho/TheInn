@@ -1,4 +1,6 @@
 #include "sprite.h"
+#include "wndControl.h"
+#include <vector>
 #include <fstream>
 
 using namespace std;
@@ -52,7 +54,25 @@ SpriteManager::SpriteManager()
 		spriteList.close();
 	}
 
+	vector<wstring> tilesetImgList;
+	GetFiles(tilesetImgList, L"Graphics\\Tilesets", false);
+	for (int i = 0; i < tilesetImgList.size(); i++)
+	{
+		Image* tilesetImg = Image::FromFile(tilesetImgList[i].c_str());
+		string multiByteName;
+		multiByteName.assign(tilesetImgList[i].begin(), tilesetImgList[i].end());
+		tilesetMap.insert(pair<string, Image*>(
+			string(multiByteName.c_str() + strlen("Graphics\\Tilesets") + 1),
+			tilesetImg)
+		);
+	}
 	atlasList.close();
+}
+
+void SpriteManager::loadImage(std::wstring path, std::string name)
+{
+	Image* image = Image::FromFile(path.c_str());
+	imageMap.insert(pair<string, Image*>(name, image));
 }
 
 void SpriteManager::draw(const HDC & hdc, string atlas, int x, int y, string sprite)

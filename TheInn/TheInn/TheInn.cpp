@@ -17,6 +17,9 @@ HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 HWND ghWnd;										// 전역 기본 윈도우 핸들
+RECT clientRect;
+HDC hMainDC;
+HDC hBufferDC;
 
 bool gbMsgLoop = true;
 
@@ -53,9 +56,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_THEINN));
-
     MSG msg;
 
+	hMainDC = GetDC(ghWnd);
+	hBufferDC = CreateCompatibleDC(hMainDC);
+	HBITMAP hBitmap = CreateCompatibleBitmap(hMainDC, clientRect.right, clientRect.bottom);
+	SelectObject(hBufferDC, hBitmap);
 
     // 기본 메시지 루프입니다:
     while (gbMsgLoop)
@@ -70,6 +76,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			test();
 		}
     }
+
+	DeleteObject(hBitmap);
+	DeleteObject(hBufferDC);
+	ReleaseDC(ghWnd, hMainDC);
 
 	GdiplusShutdown(gpToken);
 
@@ -173,6 +183,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             EndPaint(hWnd, &ps);
         }
         break;
+
+	case WM_SIZE:
+		GetClientRect(ghWnd, &clientRect);
+		break;
     case WM_DESTROY:
 		gbMsgLoop = false;
         PostQuitMessage(0);
