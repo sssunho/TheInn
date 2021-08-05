@@ -1,2 +1,10 @@
-bowmasterWalkS
-bowmasterWalkF
+walkF
+walkS
+walkB
+walkBD
+walkFD
+standF
+standS
+standB
+standBD
+standFD

@@ -5,6 +5,8 @@
 
 using namespace std;
 
+extern RECT clientRect;
+
 SpriteManager::SpriteManager()
 {
 	int n;
@@ -131,12 +133,37 @@ Sprite SpriteManager::getSprite(string imageFile, string subSprite)
 	return sprite;
 }
 
-void Sprite::draw(const HDC& hdc, int x, int y)
+bool SpriteManager::hasThisImage(string imageName)
 {
+	return imageMap.find(imageName) != imageMap.end();
+}
 
+void Sprite::draw(const HDC& hdc, int x, int y, TransformType flag)
+{
 	if (img == NULL)
 		return;
 	Graphics g(hdc);
 	Rect dest = { x - width / 2, y - height / 2, width, height };
+	if (flag != NONE)
+	{
+		switch (flag)
+		{
+		case FLIP_X:
+		{
+			Matrix transformMat = { 1.0f, 0.0f, 0.0f, -1.0f,
+				0 , (float)(2 * dest.Y + height) };
+			g.SetTransform(&transformMat);
+		}
+			break;
+		case FLIP_Y:
+		{
+			float t = (float)(2 * dest.X - clientRect.right);
+			Matrix transformMat = { -1.0f, 0.0f, 0.0f, 1.0f,
+				(float)(2 * dest.X + width),0 };
+			g.SetTransform(&transformMat);
+		}
+			break;
+		}
+	}
 	g.DrawImage(img, dest, cx, cy, width, height, UnitPixel);
 }

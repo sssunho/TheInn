@@ -4,6 +4,7 @@
 #include "animator.h"
 #include "map.h"
 #include "gameObject.h"
+#include "wndControl.h"
 #include <ctime>
 
 extern HWND ghWnd;
@@ -18,36 +19,80 @@ void test()
 	AnimationManager& am = AnimationManager::getInstance();
 
 	static clock_t time = clock();
-
-	static Animation* ani = am.getAnimation("bowmasterWalkF");
-
 	clock_t dt = clock() - time;
 
 	MapManager& m = MapManager::getInstance();
 
+	static Actor actor(0, 0, DIRECTION::R, "swordman");
 	static bool test = true;
 	if (test)
 	{
 		mmm = m.loadMap();
+		actor.setState(ActorState::ONMOVE);
 		test = false;
 	}
 	Camera& camera = Camera::getInstance();
 	
-	if (GetAsyncKeyState(VK_RIGHT) & 0x8001)
-		camera.pos.x += 1;
-	if (GetAsyncKeyState(VK_LEFT) & 0x8001)
-		camera.pos.x += -1;
-	if (GetAsyncKeyState(VK_UP) & 0x8001)
-		camera.pos.y += -1;
-	if (GetAsyncKeyState(VK_DOWN) & 0x8001)
-		camera.pos.y += 1;
+
 
 	if (dt > 17)	// 60fps
 	{
-		am.update();
+		DIRECTION key = getDirectionKeyState();
+		ActorState state = actor.getState();
+		
+		if (key == DIRECTION::NONE && state == ActorState::ONMOVE)
+			actor.setState(ActorState::IDLE);
+		if (key != DIRECTION::NONE && state == ActorState::IDLE)
+			actor.setState(ActorState::ONMOVE);
+
+		if (key != actor.getDirection() && key != DIRECTION::NONE)
+			actor.setDirection(key);
+
+		int speed = 7;
+		int dirspeed = 5;
+
+		switch (key)
+		{
+		case DIRECTION::U:
+			actor.pos.y -= speed;
+			break;
+		case DIRECTION::LU:
+			actor.pos.y -= dirspeed;
+			actor.pos.x -= dirspeed;
+			break;
+		case DIRECTION::RU:
+			actor.pos.y -= dirspeed;
+			actor.pos.x += dirspeed;
+			break;
+		case DIRECTION::D:
+			actor.pos.y += speed;
+			break;
+		case DIRECTION::LD:
+			actor.pos.y += dirspeed;
+			actor.pos.x -= dirspeed;
+			break;
+		case DIRECTION::RD:
+			actor.pos.y += dirspeed;
+			actor.pos.x += dirspeed;
+			break;
+		case DIRECTION::L:
+			actor.pos.x -= speed;
+			break;
+		case DIRECTION::R:
+			actor.pos.x += speed;
+			break;
+		}
+
 		mmm->draw(hBufferDC, camera.pos - POINT({ clientRect.right / 2, clientRect.bottom / 2 }), 0);
-		ani->draw(hBufferDC, 300, 300);
+
+		actor.update(dt);
+		camera.pos = actor.pos;
+
+
+		actor.draw(hBufferDC);
+
 		BitBlt(hMainDC, 0, 0, clientRect.right, clientRect.bottom, hBufferDC, 0, 0, SRCCOPY);
+		time = clock();
 	}
 }
 

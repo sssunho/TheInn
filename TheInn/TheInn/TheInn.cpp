@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "TheInn.h"
 #include "gameplay.h"
+#include "wndControl.h"
 #include <memory>
 
 using namespace Gdiplus;
@@ -158,6 +159,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+	case WM_CREATE:
+		SetClientSize(hWnd, 640, 480);
+		break;
+
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);

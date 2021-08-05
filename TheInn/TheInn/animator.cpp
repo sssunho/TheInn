@@ -8,19 +8,17 @@ AnimationManager::AnimationManager()
 	animationList.open("sprite/animation/list.txt");
 	if (!animationList.is_open())
 		return;
-	
 	while (!animationList.eof())
 	{
 		string animationName;
 		string spriteName;
 		fstream animationData;
 		Animation::AnimationData animation;
-		
+
 		animationList >> animationName;
 		animationData.open("sprite/animation/" + animationName + ".txt");
 		if (!animationData.is_open())
 			continue;
-		getline(animationData, animation.first);
 		while (!animationData.eof())
 		{
 			Animation::FrameData frame;
@@ -37,7 +35,7 @@ AnimationManager::AnimationManager()
 				frame.push_back(tempSpriteData);
 			}
 
-			animation.second.push_back(frame);
+			animation.push_back(frame);
 
 		}
 
@@ -50,27 +48,28 @@ AnimationManager::AnimationManager()
 
 }
 
-Animation* AnimationManager::getAnimation(string name)
+Animation AnimationManager::getAnimation(string spName, string aniName)
 {
-	if (animationDataMap.find(name) == animationDataMap.end())
-		return nullptr;
-	Animation* instance = new Animation;
-	animationInstArr.push_back(instance);
-	instance->animationName = name;
-	instance->maxFrame = animationDataMap[name].second.size();
+	SpriteManager& sm = SpriteManager::getInstance();
+	if (animationDataMap.find(aniName) == animationDataMap.end())
+		return Animation();
+	if (!sm.hasThisImage(spName))
+		return Animation();
+	Animation instance(spName, aniName);
+	instance.maxFrame = animationDataMap[aniName].size();
 	return instance;
 }
 
-void Animation::draw(HDC& hdc, int x, int y)
+void Animation::draw(HDC& hdc, int x, int y, TransformType flag)
 {
 	AnimationManager& am = AnimationManager::getInstance();
 	SpriteManager& sm = SpriteManager::getInstance();
-	FrameData frame = am.animationDataMap[animationName].second[curFrame];
+	FrameData frame = am.animationDataMap[animationName][curFrame];
 
 	for (int i = 0; i < frame.size(); i++)
 	{
-		Sprite sprite = sm.getSprite(am.animationDataMap[animationName].first, frame[i].name);
-		sprite.draw(hdc, x + frame[i].x, y + frame[i].y);
+		Sprite sprite = sm.getSprite(spriteName, frame[i].name);
+		sprite.draw(hdc, x + frame[i].x, y + frame[i].y, flag);
 	}
 }
 
@@ -81,13 +80,6 @@ void AnimationManager::update()
 	for (it = animationInstArr.begin(); it != animationInstArr.end(); it++)
 		(*it)->update();
 
-	for (it = animationInstArr.begin(); it != animationInstArr.end(); )
-	{
-		if (!(*it)->playing)
-			it = animationInstArr.erase(it);
-		else
-			it++;
-	}
 }
 
 void Animation::update()
@@ -95,8 +87,8 @@ void Animation::update()
 	curFrame++;
 	if (curFrame >= maxFrame)
 	{
-		curFrame = 0;
+		curFrame = 0;/*
 		if(!repeat)
-			playing = false;
+			playing = false;*/
 	}
 }

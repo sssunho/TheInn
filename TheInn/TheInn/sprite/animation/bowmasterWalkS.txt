@@ -1,5 +1,21 @@
 bowmaster
-runS1 0 0
-runS2 0 0
-runS3 0 0
-runS4 0 0
+runF1 0 0
+runF1 0 0 
+runF1 0 0 
+runF1 0 0 
+runF1 0 0 
+runF2 0 0 
+runF2 0 0 
+runF2 0 0 
+runF2 0 0 
+runF2 0 0 
+runF3 0 0 
+runF3 0 0 
+runF3 0 0 
+runF3 0 0 
+runF3 0 0 
+runF4 0 0
+runF4 0 0
+runF4 0 0
+runF4 0 0
+runF4 0 0

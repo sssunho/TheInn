@@ -14,6 +14,8 @@ using std::string;
 class SpriteManager;
 class MapManager;
 
+enum TransformType { NONE, FLIP_X, FLIP_Y };
+
 class Sprite
 {
 	friend class SpriteManager;
@@ -41,7 +43,7 @@ public:
 		width = ref.width; height = ref.height;
 	}
 
-	void draw(const HDC&, int x, int y);
+	void draw(const HDC&, int x, int y, TransformType flag = TransformType::NONE);
 
 };
 
@@ -63,6 +65,8 @@ private:
 	Gdiplus::Image* getTilesetSprite(std::string name) { return tilesetMap[name]; };
 
 public:
+
+
 	static SpriteManager& getInstance()
 	{
 		static SpriteManager s;
@@ -72,6 +76,8 @@ public:
 	void draw(const HDC&, string atlas, int x, int y, string sprite = "");
 
 	Sprite getSprite(string imageFile, string subSprite = "");
+
+	bool hasThisImage(string imageName);
 	
 };
 

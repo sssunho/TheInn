@@ -5,6 +5,7 @@
 #include "framework.h"
 #include "pointVector.h";
 #include "animator.h"
+#include "map.h"
 #include <string>
 
 enum class DIRECTION { NONE = 0, D = 1, R = 2, RD = 3, U = 4, RU = 6, L = 8, LD = 9, LU = 12 };
@@ -26,10 +27,11 @@ class Actor : public GameObject
 private:
 	DIRECTION dir;
 	ActorState state;
-	Animation* animation;
+	string spriteName;
+	Animation animation;
 
 public:
-	Actor(int x = 0, int y = 0, DIRECTION dir = DIRECTION::D, const std::string aniName = NULL);
+	Actor(int x = 0, int y = 0, DIRECTION dir = DIRECTION::D, const string spriteName = NULL);
 
 	void setDirection(DIRECTION dir);
 	DIRECTION getDirection() { return dir; }
@@ -45,9 +47,11 @@ public:
 class Camera : public GameObject
 {
 private:
-	Camera(){};
+	Camera() : margin(TILE_PIXEL) {};
 	Camera(const Camera& ref) {}
 	Camera& operator=(const Camera& ref) {}
+	
+	int margin;
 
 public:
 
@@ -60,7 +64,12 @@ public:
 		return s;
 	}
 
+	bool isIn(POINT p);
+
+	static POINT toScreenCoord(POINT p);
+
 	void setPos(POINT p) { pos = p; }
+
 	POINT getPos() { return pos; }
 };
 

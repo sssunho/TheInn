@@ -17,7 +17,8 @@ class AnimationManager;
 
 class Animation
 {
-	friend AnimationManager;
+	friend class AnimationManager;
+	friend class Actor;
 
 private:
 	struct SpriteData
@@ -28,44 +29,55 @@ private:
 	};
 
 	typedef vector<SpriteData> FrameData;
-	typedef pair<string,vector<FrameData>> AnimationData;
+	typedef vector<FrameData> AnimationData;
 
 	string animationName;
+	string spriteName;
 	int curFrame;
 	int maxFrame;
 	bool playing;
 	bool repeat;
 	bool collapse;
 		
-	Animation& operator=(const Animation& ref)
-	{
-		animationName = ref.animationName;
-		curFrame = 0;
-		maxFrame = 0;
-		playing = true;
-		repeat = false;
-		collapse = true;
-	}
-
 	Animation() : 
-		animationName(), curFrame(0), maxFrame(0), 
-		playing(true), repeat(false), collapse(true) {}
+		animationName(), spriteName(),
+		curFrame(0), maxFrame(0), 
+		playing(true), repeat(false), collapse(false) {}
 
-	void update();
+	Animation(string spName, string aniName) :
+		animationName(aniName), spriteName(spName),
+		curFrame(0), maxFrame(0),
+		playing(true), repeat(false), collapse(false) {}
 
 public:
 	Animation(const Animation& ref)
 	{
 		animationName = ref.animationName;
+		spriteName = ref.spriteName;
 		curFrame = 0;
-		maxFrame = 0;
+		maxFrame = ref.maxFrame;
 		playing = true;
 		repeat = false;
+		collapse = false;
 	}
 
-	void release() { playing = false; }
+	Animation& operator=(const Animation& ref)
+	{
+		animationName = ref.animationName;
+		spriteName = ref.spriteName;
+		curFrame = 0;
+		maxFrame = ref.maxFrame;
+		playing = true;
+		repeat = false;
+		collapse = false;
+		return *this;
+	}
 
-	void draw(HDC& hdc, int x, int y);
+	void update();
+
+	void release() { collapse = true; }
+
+	void draw(HDC& hdc, int x, int y, TransformType flag = NONE);
 
 	void setRepeat(bool flag) { repeat = flag; }
 };
@@ -85,15 +97,17 @@ private:
 
 	map<string, Animation::AnimationData> animationDataMap;
 	list<Animation*> animationInstArr;
+	void eraseInst(Animation* ani) { animationInstArr.remove(ani); }
 
 public:
+
 	static AnimationManager& getInstance()
 	{
 		static AnimationManager s;
 		return s;
 	}
 
-	Animation* getAnimation(string name);
+	Animation getAnimation(string, string);
 
 	void update();
 
