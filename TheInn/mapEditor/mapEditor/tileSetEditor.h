@@ -16,6 +16,7 @@ const int mapDataMask[4][4] =
 };
 
 class MapEditor;
+class Autotile;
 
 class TilesetEditor
 {
@@ -27,31 +28,48 @@ private:
 	Gdiplus::Bitmap* grid;
 	POINT currentPos;
 	POINT selectPos;
+	Autotile* autoTile[7];
 	std::vector<std::vector<int>>  tileData;
 	TilesetEditor() {};
 	Gdiplus::Image* getSprite() { return sprite; };
 
+	
+	POINT dragStart;
+	POINT dragEnd;
+	bool dragArea = false;
+
 public:
 	TilesetEditor(HWND owner, std::wstring path);
 
-	~TilesetEditor()
-	{
-		delete sprite;
-		delete grid;
-	}
+	~TilesetEditor();
 	void setCurrentPos(POINT mousePOS);
 	POINT getCurrentPos() { return currentPos; }
 
-	void setSelectPos(POINT mousePOS);
+	void selectTile(POINT mousePOS);
+
+	void setSelectPos(POINT pos) { selectPos = pos; }
 	POINT getSelectPos() { return selectPos; };
 
+	POINT getAreaStart() { return dragStart; }
+	POINT getAreaEnd() { return dragEnd; }
+
+	Autotile* getAutoTile() { return autoTile[selectPos.x - 1]; }
+
 	void save();
+	bool isAreaDraw() { return dragArea; }
 
 
 	void render();
 	void drawTile(HWND hWnd);
 	void drawTileInfo(HWND hWnd, POINT p);
 	void setTileData(POINT targetTile, POINT targetData);
+
+	void selectTile(POINT p1, POINT p2);
+
+	std::wstring getAutotilePath(int i);
+
+	void loadAutoTile(int i, std::wstring path);
+
 };
 
 

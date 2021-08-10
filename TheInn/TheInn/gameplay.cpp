@@ -5,12 +5,20 @@
 #include "map.h"
 #include "gameObject.h"
 #include "wndControl.h"
+#include "coordTransform.h"
 #include <ctime>
 
 extern HWND ghWnd;
 extern HDC hMainDC;
 extern HDC hBufferDC;
+extern HDC hBackBufferDC;
 extern RECT clientRect;
+
+class Test
+{
+public:
+	void foo() { static int i = 0; i++; }
+};
 
 void test()
 {
@@ -23,17 +31,16 @@ void test()
 
 	MapManager& m = MapManager::getInstance();
 
-	static Actor actor(0, 0, DIRECTION::R, "swordman");
+	static Actor actor(300, 300, DIRECTION::R, "swordman");
+	actor.spriteOffset = { 0, -20 };
 	static bool test = true;
 	if (test)
 	{
-		mmm = m.loadMap();
+		mmm = m.loadMap("debugZone.mapdata");
 		actor.setState(ActorState::ONMOVE);
 		test = false;
 	}
 	Camera& camera = Camera::getInstance();
-	
-
 
 	if (dt > 17)	// 60fps
 	{
@@ -48,51 +55,63 @@ void test()
 		if (key != actor.getDirection() && key != DIRECTION::NONE)
 			actor.setDirection(key);
 
-		int speed = 7;
-		int dirspeed = 5;
+		float speed = 280.0f;
+		float dirspeed = 200.0f;
 
 		switch (key)
 		{
 		case DIRECTION::U:
-			actor.pos.y -= speed;
+			actor.vel.x = 0;
+			actor.vel.y = -speed;
 			break;
 		case DIRECTION::LU:
-			actor.pos.y -= dirspeed;
-			actor.pos.x -= dirspeed;
+			actor.vel.y = -dirspeed;
+			actor.vel.x = -dirspeed;
 			break;
 		case DIRECTION::RU:
-			actor.pos.y -= dirspeed;
-			actor.pos.x += dirspeed;
+			actor.vel.y = -dirspeed;
+			actor.vel.x = dirspeed;
 			break;
 		case DIRECTION::D:
-			actor.pos.y += speed;
+			actor.vel.x = 0;
+			actor.vel.y = speed;
 			break;
 		case DIRECTION::LD:
-			actor.pos.y += dirspeed;
-			actor.pos.x -= dirspeed;
+			actor.vel.y = dirspeed;
+			actor.vel.x = -dirspeed;
 			break;
 		case DIRECTION::RD:
-			actor.pos.y += dirspeed;
-			actor.pos.x += dirspeed;
+			actor.vel.y = dirspeed;
+			actor.vel.x = dirspeed;
 			break;
 		case DIRECTION::L:
-			actor.pos.x -= speed;
+			actor.vel.y = 0;
+			actor.vel.x = -speed;
 			break;
 		case DIRECTION::R:
-			actor.pos.x += speed;
+			actor.vel.y = 0;
+			actor.vel.x = speed;
+			break;
+		default:
+			actor.vel.x = 0;
+			actor.vel.y = 0;
 			break;
 		}
 
-		mmm->draw(hBufferDC, camera.pos - POINT({ clientRect.right / 2, clientRect.bottom / 2 }), 0);
+		actor.update(dt/1000.0f);
+		Camera::Bound(actor.pos);
+		mmm->draw(hBufferDC, Camera::pos - POINT({ clientRect.right / 2, clientRect.bottom / 2 }), 0);
 
-		actor.update(dt);
-		camera.pos = actor.pos;
-
+		mmm->draw(hBufferDC, Camera::pos - POINT({ clientRect.right / 2, clientRect.bottom / 2 }), 1);
 
 		actor.draw(hBufferDC);
 
+		mmm->draw(hBufferDC, Camera::pos - POINT({ clientRect.right / 2, clientRect.bottom / 2 }), 2);
+
 		BitBlt(hMainDC, 0, 0, clientRect.right, clientRect.bottom, hBufferDC, 0, 0, SRCCOPY);
+		
 		time = clock();
+
 	}
 }
 

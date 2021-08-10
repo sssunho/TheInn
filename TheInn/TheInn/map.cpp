@@ -2,12 +2,33 @@
 #include "framework.h"
 #include "sprite.h"
 #include "wndControl.h"
+#include "pointVector.h"
+#include "autoTile.h"
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <ctime>
 
 using namespace std;
+using namespace Gdiplus;
 extern HWND ghWnd;
+
+extern HDC hMainDC;
+extern HDC hBufferDC;
+extern HDC hBackBufferDC;
+
+map<string, MapManager::TilesetData> MapManager::tilesetTable;
+map<string, Map::MapData> MapManager::mapTable;
+Map* MapManager::loadedMap = NULL;
+
+int cellMask[4][4] =
+{
+	{1 << 15, 1 << 14, 1 << 13, 1 << 12},
+	{1 << 11, 1 << 10, 1 << 9, 1 << 8},
+	{1 << 7, 1 << 6, 1 << 5, 1 << 4},
+	{1 << 3, 1 << 2, 1 << 1, 1}
+};
+
 
 MapManager::MapManager()
 {
@@ -100,6 +121,22 @@ void MapManager::initTilesetTable()
 
 			tilesetDataFile >> tilesetData.spriteName
 					>> tilesetData.nx >> tilesetData.ny;
+			
+			char autotileName[512];
+			stringstream wss;
+			int stringSize, autotileCount = 0;
+			tilesetDataFile.get();
+			tilesetDataFile.getline(autotileName, 512);
+			wss << autotileName;
+			stringSize = strlen(autotileName);
+			while (wss.tellg() < stringSize - 1)
+			{
+				int i = 0;
+				wss >> autotileName;
+				tilesetData.autotile[autotileCount].ID = POINT({ autotileCount + 1, 0 });
+				for (i = strlen(autotileName) - 1; i >= 0 && autotileName[i] != '/' && autotileName[i] != '\\'; i--);
+				tilesetData.autotile[autotileCount++].name = autotileName + i + 1;
+			}
 
 			tilesetData.cellData.resize(tilesetData.ny);
 			for (int i = 0; i < tilesetData.cellData.size(); i++)
@@ -123,56 +160,111 @@ void MapManager::initTilesetTable()
 	}
 }
 
-Map* MapManager::loadMap()
+void MapManager::drawUnitTile(Graphics & g, string mapName, int layer, POINT & srcPoint, Rect & dest)
+{
+	if (srcPoint.y)
+	{
+		SpriteManager& sm = SpriteManager::getInstance();
+		Image* srcImg = sm.getTilesetSprite(tilesetTable[mapTable[mapName].tilesetName].spriteName);
+		g.DrawImage(
+			srcImg,
+			dest,
+			srcPoint.x  * TILE_PIXEL,
+			(srcPoint.y - 1) * TILE_PIXEL,
+			TILE_PIXEL, TILE_PIXEL,
+			UnitPixel );
+	}
+	else
+	{
+		if (srcPoint.x)
+		{
+			tilesetTable[mapTable[mapName].tilesetName].autotile[srcPoint.x - 1].draw(g, layer, dest, mapName);
+		}
+	}
+}
+
+Map* MapManager::loadMap(string mapName)
 {
 	Bitmap* layer[3];
+	Bitmap* grid;
+	string tilesetName = mapTable[mapName].tilesetName;
 
-	layer[0] = new Bitmap(mapTable["test.mapdata"].nx * TILE_PIXEL, 
-		mapTable["test.mapdata"].ny* TILE_PIXEL, PixelFormat32bppARGB);
-	layer[1] = new Bitmap(mapTable["test.mapdata"].nx * TILE_PIXEL,
-		mapTable["test.mapdata"].ny* TILE_PIXEL, PixelFormat32bppARGB);
-	layer[2] = new Bitmap(mapTable["test.mapdata"].nx * TILE_PIXEL,
-		mapTable["test.mapdata"].ny* TILE_PIXEL, PixelFormat32bppARGB);
-
-	TilesetData tilesetData = tilesetTable[mapTable["test.mapdata"].tilesetName];
+	layer[0] = new Bitmap(mapTable[mapName].nx * TILE_PIXEL, 
+		mapTable[mapName].ny* TILE_PIXEL, PixelFormat32bppARGB);
+	layer[1] = new Bitmap(mapTable[mapName].nx * TILE_PIXEL,
+		mapTable[mapName].ny* TILE_PIXEL, PixelFormat32bppARGB);
+	layer[2] = new Bitmap(mapTable[mapName].nx * TILE_PIXEL,
+		mapTable[mapName].ny* TILE_PIXEL, PixelFormat32bppARGB);
+	grid = new Bitmap(mapTable[mapName].nx * TILE_PIXEL,
+		mapTable[mapName].ny* TILE_PIXEL, PixelFormat32bppARGB);
+	
+	const TilesetData& tilesetData = tilesetTable[mapTable[mapName].tilesetName];
 	SpriteManager& sm = SpriteManager::getInstance();
-	Image* tilesetImg = sm.getTilesetSprite(tilesetTable[mapTable["test.mapdata"].tilesetName].spriteName);
+	Image* tilesetImg = sm.getTilesetSprite(tilesetTable[tilesetName].spriteName);
 	
 	Rect drawDest = { 0, 0, TILE_PIXEL, TILE_PIXEL };
 
 	Graphics canvas0(layer[0]);
 	Graphics canvas1(layer[1]);
 	Graphics canvas2(layer[2]);
+	Graphics g(grid);
+	Pen gridPen(Color(255, 0, 0), 3);
+	Pen cellPen(Color(0, 0, 255), 1);
 
-	for(int i = 0 ; i < mapTable["test.mapdata"].ny ; i++)
-		for (int j = 0; j < mapTable["test.mapdata"].nx; j++)
+	Map* loadedMap = new Map(mapName, layer[0], layer[1], layer[2], grid);
+	loadedMap->blockMap.resize(mapTable[mapName].ny);
+
+	for (int i = 0; i < loadedMap->blockMap.size(); i++)
+		loadedMap->blockMap[i].resize(mapTable[mapName].nx);
+
+	for (int i = 0; i < mapTable[mapName].ny; i++)
+	{
+		for (int j = 0; j < mapTable[mapName].nx; j++)
 		{
 			drawDest.X = j * TILE_PIXEL;
 			drawDest.Y = i * TILE_PIXEL;
-			canvas0.DrawImage(tilesetImg,
-				drawDest,
-				mapTable["test.mapdata"].cellData[0][i][j].x*TILE_PIXEL, 
-				(mapTable["test.mapdata"].cellData[0][i][j].y - 1)*TILE_PIXEL,
-				TILE_PIXEL, TILE_PIXEL,
-				UnitPixel
-			);
-			canvas1.DrawImage(tilesetImg,
-				drawDest,
-				mapTable["test.mapdata"].cellData[1][i][j].x*TILE_PIXEL,
-				(mapTable["test.mapdata"].cellData[1][i][j].y - 1)*TILE_PIXEL,
-				TILE_PIXEL, TILE_PIXEL,
-				UnitPixel
-			);
-			canvas2.DrawImage(tilesetImg,
-				drawDest,
-				mapTable["test.mapdata"].cellData[2][i][j].x*TILE_PIXEL,
-				(mapTable["test.mapdata"].cellData[2][i][j].y - 1)*TILE_PIXEL,
-				TILE_PIXEL, TILE_PIXEL,
-				UnitPixel
-			);
-		}
+			drawUnitTile(canvas0, mapName, 0, mapTable[mapName].cellData[0][i][j], drawDest);
 
-	return new Map(layer[0], layer[1], layer[2]);
+			loadedMap->blockMap[i][j] = tilesetData.cellData[mapTable[mapName].cellData[0][i][j].y][mapTable[mapName].cellData[0][i][j].x];
+
+			drawUnitTile(canvas1, mapName, 1, mapTable[mapName].cellData[1][i][j], drawDest);
+			
+			if (mapTable[mapName].cellData[1][i][j] != POINT({0, 0}))
+				loadedMap->blockMap[i][j] = tilesetData.cellData[mapTable[mapName].cellData[1][i][j].y][mapTable[mapName].cellData[1][i][j].x];
+
+
+			drawUnitTile(canvas2, mapName, 2, mapTable[mapName].cellData[2][i][j], drawDest);
+
+			if (mapTable[mapName].cellData[2][i][j] != POINT({ 0, 0 }))
+				loadedMap->blockMap[i][j] = tilesetData.cellData[mapTable[mapName].cellData[2][i][j].y][mapTable[mapName].cellData[2][i][j].x];
+/*
+			g.DrawLine(&gridPen, Point(j * TILE_PIXEL, 0), Point(j*TILE_PIXEL,
+				mapTable[mapName].ny * TILE_PIXEL));
+			g.DrawLine(&cellPen, Point(j * TILE_PIXEL + 8, 0), Point(j*TILE_PIXEL + 8,
+				mapTable[mapName].ny * TILE_PIXEL));
+			g.DrawLine(&cellPen, Point(j * TILE_PIXEL + 16, 0), Point(j*TILE_PIXEL + 16,
+				mapTable[mapName].ny * TILE_PIXEL));
+			g.DrawLine(&cellPen, Point(j * TILE_PIXEL + 24, 0), Point(j*TILE_PIXEL + 24,
+				mapTable[mapName].ny * TILE_PIXEL));*/
+
+		}/*
+		g.DrawLine(&gridPen, Point(0, i * TILE_PIXEL), Point(mapTable[mapName].nx * TILE_PIXEL,
+			i*TILE_PIXEL));
+		g.DrawLine(&cellPen, Point(0, i * TILE_PIXEL + 8), Point(mapTable[mapName].nx * TILE_PIXEL,
+			i*TILE_PIXEL + 8));
+		g.DrawLine(&cellPen, Point(0, i * TILE_PIXEL + 16), Point(mapTable[mapName].nx * TILE_PIXEL,
+			i*TILE_PIXEL + 16));
+		g.DrawLine(&cellPen, Point(0, i * TILE_PIXEL + 24), Point(mapTable[mapName].nx * TILE_PIXEL,
+			i*TILE_PIXEL + 24));*/
+	}
+
+	MapManager::loadedMap = loadedMap;
+	return loadedMap;
+}
+
+Map::Map(string name, Bitmap * l1, Bitmap * l2, Bitmap * l3, Bitmap * grid) : mapName(name)
+{
+	layer[0] = l1; layer[1] = l2; layer[2] = l3; Map::grid = grid;
 }
 
 void Map::draw(HDC& hdc, POINT pos, int l)
@@ -186,4 +278,13 @@ void Map::draw(HDC& hdc, POINT pos, int l)
 	g.DrawImage(layer[l],
 		Rect({ 0, 0, clientRect.right, clientRect.bottom }),
 		pos.x, pos.y, clientRect.right, clientRect.bottom, UnitPixel);
+}
+
+bool Map::isBlock(POINT p)
+{
+	if (p.x < 0 || p.y < 0 ||
+		p.x >= layer[0]->GetWidth() || p.y >= layer[0]->GetHeight())
+		return true;
+	
+	return blockMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] & cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
 }

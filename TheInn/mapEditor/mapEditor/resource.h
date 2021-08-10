@@ -14,9 +14,18 @@
 #define IDR_MAINFRAME                   128
 #define IDD_TILEINFO                    129
 #define IDD_MAPSETTING                  129
+#define IDD_AUTOTILE                    130
 #define IDC_NX                          1000
 #define IDC_NY                          1001
+#define IDC_EDIT1                       1001
 #define IDC_TILESET                     1002
+#define IDC_EDIT2                       1002
+#define IDC_EDIT5                       1003
+#define IDC_EDIT6                       1004
+#define IDC_EDIT3                       1005
+#define IDC_EDIT6_                      1006
+#define IDC_EDIT4                       1006
+#define IDC_EDIT7                       1007
 #define ID_32771                        32771
 #define ID_TEST                         32772
 #define ID_32773                        32773
@@ -34,9 +43,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32781
-#define _APS_NEXT_CONTROL_VALUE         1001
+#define _APS_NEXT_CONTROL_VALUE         1002
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

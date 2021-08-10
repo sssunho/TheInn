@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="autoTile.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="gridMap.h" />
     <ClInclude Include="main.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="wndControl.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="autoTile.cpp" />
     <ClCompile Include="gridMap.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mapEditor.cpp" />

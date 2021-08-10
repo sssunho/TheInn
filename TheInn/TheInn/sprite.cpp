@@ -68,6 +68,19 @@ SpriteManager::SpriteManager()
 			tilesetImg)
 		);
 	}
+
+	vector<wstring> autotileImgList;
+	GetFiles(autotileImgList, L"Graphics\\Autotiles", false);
+	for (int i = 0; i < autotileImgList.size(); i++)
+	{
+		Image* autotileImg = Image::FromFile(autotileImgList[i].c_str());
+		string multiByteName;
+		multiByteName.assign(autotileImgList[i].begin(), autotileImgList[i].end());
+		autotileMap.insert(pair<string, Image*>(
+			string(multiByteName.c_str() + strlen("Graphics\\Autotiles") + 1),
+			autotileImg)
+		);
+	}
 	atlasList.close();
 }
 

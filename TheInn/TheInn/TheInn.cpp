@@ -21,6 +21,7 @@ HWND ghWnd;										// 전역 기본 윈도우 핸들
 RECT clientRect;
 HDC hMainDC;
 HDC hBufferDC;
+HDC hBackBufferDC;
 
 bool gbMsgLoop = true;
 
@@ -61,6 +62,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	hMainDC = GetDC(ghWnd);
 	hBufferDC = CreateCompatibleDC(hMainDC);
+	hBackBufferDC = CreateCompatibleDC(hMainDC);
 	HBITMAP hBitmap = CreateCompatibleBitmap(hMainDC, clientRect.right, clientRect.bottom);
 	SelectObject(hBufferDC, hBitmap);
 
@@ -79,6 +81,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
 	DeleteObject(hBitmap);
+	DeleteObject(hBackBufferDC);
 	DeleteObject(hBufferDC);
 	ReleaseDC(ghWnd, hMainDC);
 

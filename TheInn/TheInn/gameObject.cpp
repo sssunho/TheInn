@@ -1,9 +1,11 @@
 #include "gameObject.h"
 #include "framework.h"
+#include "coordTransform.h"
 #include <string>
 
 using namespace std;
 extern RECT clientRect;
+POINT Camera::pos = { 0, 0 };
 
 Actor::Actor(int x, int y, DIRECTION dir, string spriteName)
 	: GameObject(x, y), dir(DIRECTION::D), spriteName(spriteName)
@@ -139,13 +141,18 @@ void Actor::draw(HDC& hdc)
 	TransformType flag =
 		dir == DIRECTION::R || dir == DIRECTION::RU || dir == DIRECTION::RD ?
 		FLIP_Y : NONE;
-	POINT drawPoint = Camera::toScreenCoord(pos);
+	POINT drawPoint = pixelToScreen(pos) + spriteOffset;
 	animation.draw(hdc, drawPoint.x, drawPoint.y, flag);
 }
 
 void Actor::update(float dt)
 {
 	animation.update();
+	VECTOR dest = realPos + dt * vel;
+	if (MapManager::loadedMap->isBlock(dest) || dest.x < 0 || dest.y < 0)
+		return;
+	realPos = dest;
+	pos = realPos;
 }
 
 bool Camera::isIn(POINT p)
@@ -154,8 +161,21 @@ bool Camera::isIn(POINT p)
 	return false;
 }
 
-POINT Camera::toScreenCoord(POINT p)
+void Camera::Bound(POINT p)
 {
-	Camera& c = Camera::getInstance();
-	return p - c.pos + POINT({ clientRect.right / 2, clientRect.bottom / 2 });
+	int width = MapManager::loadedMap->getWidth();
+	int height = MapManager::loadedMap->getHeight();
+	if (p.x - clientRect.right / 2 < 0)
+		pos.x = clientRect.right / 2;
+	else if (p.x + clientRect.right / 2 > width)
+		pos.x = width - clientRect.right / 2;
+	else
+		pos.x = p.x;
+
+	if (p.y - clientRect.bottom / 2 < 0)
+		pos.y = clientRect.bottom / 2;
+	else if (p.y + clientRect.bottom / 2 > height)
+		pos.y = height - clientRect.bottom / 2;
+	else
+		pos.y = p.y;
 }

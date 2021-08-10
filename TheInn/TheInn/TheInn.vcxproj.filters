@@ -48,6 +48,15 @@
     <ClInclude Include="wndControl.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="coordTransform.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="VECTOR.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="autoTile.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TheInn.cpp">
@@ -72,6 +81,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="wndControl.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="coordTransform.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="VECTOR.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="autoTile.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

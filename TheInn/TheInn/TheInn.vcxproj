@@ -152,6 +152,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="animator.h" />
+    <ClInclude Include="autoTile.h" />
+    <ClInclude Include="coordTransform.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="gameObject.h" />
     <ClInclude Include="gameplay.h" />
@@ -161,16 +163,20 @@
     <ClInclude Include="sprite.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TheInn.h" />
+    <ClInclude Include="VECTOR.h" />
     <ClInclude Include="wndControl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="animator.cpp" />
+    <ClCompile Include="autoTile.cpp" />
+    <ClCompile Include="coordTransform.cpp" />
     <ClCompile Include="gameObject.cpp" />
     <ClCompile Include="gameplay.cpp" />
     <ClCompile Include="map.cpp" />
     <ClCompile Include="pointVector.cpp" />
     <ClCompile Include="sprite.cpp" />
     <ClCompile Include="TheInn.cpp" />
+    <ClCompile Include="VECTOR.cpp" />
     <ClCompile Include="wndControl.cpp" />
   </ItemGroup>
   <ItemGroup>

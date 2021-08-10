@@ -7,6 +7,7 @@
 #include "wndControl.h"
 #include "tileSetEditor.h"
 #include "pointVector.h"
+#include <ctime>
 #include <vector>
 #include <string>
 
@@ -47,6 +48,7 @@ LRESULT CALLBACK MapEditTileSetProc(HWND hwnd, UINT message, WPARAM wParam, LPAR
 LRESULT CALLBACK TileSetEditProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK TileInfoProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK MapSettingDlg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK AutoTileDlg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
@@ -359,9 +361,18 @@ LRESULT CALLBACK MapEditFrameProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 LRESULT CALLBACK MapEditMainProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	Rect clientRect;
+	static POINT lastPos = { -1 , -1 };
+	static bool rdrag = false;
+	static bool ldrag = false;
+	static POINT dragStart;
+	static POINT dragEnd;
+
+
+	int timer = 0;
 	switch (message)
 	{
 	case WM_CREATE:
+		while (!GetAsyncKeyState(VK_LBUTTON) & 0x8001);
 		break;
 
 	case WM_HSCROLL:
@@ -373,11 +384,46 @@ LRESULT CALLBACK MapEditMainProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	case WM_VSCROLL:
 		break;
 
+	case WM_MOUSEMOVE:
+		if (ldrag)
+		{
+			if (lastPos != mapEditor->getTileCoord(POINT({ LOWORD(lParam), HIWORD(lParam) })))
+			{
+				mapEditor->drawTile(POINT({ LOWORD(lParam), HIWORD(lParam) }));
+				lastPos = mapEditor->getTileCoord(POINT({ LOWORD(lParam), HIWORD(lParam) }));
+			}
+		}
+		break;
+
 	case WM_LBUTTONDOWN:
+		if (!ldrag)
+		{
+			ldrag = true;
+		}
+		break;
+
+	case WM_LBUTTONUP:
+	{
+		ldrag = false;
 		mapEditor->drawTile(POINT({ LOWORD(lParam), HIWORD(lParam) }));
+	}
 		break;
 
 	case WM_RBUTTONDOWN:
+		if (!rdrag)
+		{
+			rdrag = true;
+			dragStart = POINT({ LOWORD(lParam), HIWORD(lParam) });
+		}
+		break;
+
+	case WM_RBUTTONUP:
+		if (rdrag)
+		{
+			dragEnd = POINT({ LOWORD(lParam), HIWORD(lParam) });
+			mapEditor->drawArea(dragStart, dragEnd);
+			rdrag = false;
+		}
 		break;
 
 	case WM_DESTROY:
@@ -389,6 +435,10 @@ LRESULT CALLBACK MapEditMainProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 
 LRESULT CALLBACK MapEditTileSetProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+
+	static bool dragging = false;
+	static POINT dragStart = { -1, -1 };
+	static POINT dragEnd = { -1, -1 };
 	switch (message)
 	{
 	case WM_CREATE:
@@ -402,11 +452,23 @@ LRESULT CALLBACK MapEditTileSetProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		}
 		break;
 
+	case WM_LBUTTONUP:
+	{
+		if (dragging)
+		{
+			TilesetEditor* temp = mapEditor->getTileWnd();
+			dragEnd = POINT({ LOWORD(lParam), HIWORD(lParam) });
+			dragging = false;
+			temp->selectTile(dragStart, dragEnd);
+		}
+	}
+	break;
+
 	case WM_LBUTTONDOWN:
 		if (mapEditor != NULL)
 		{
-			TilesetEditor* temp = mapEditor->getTileWnd();
-			temp->setSelectPos(POINT({ LOWORD(lParam), HIWORD(lParam) }));
+			dragStart = POINT({ LOWORD(lParam), HIWORD(lParam) });
+			dragging = true;
 		}
 		break;
 
@@ -434,6 +496,17 @@ LRESULT CALLBACK TileSetEditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 		hTileInfo = CreateMDIChild(hwndClient, L"tileInfoEditor");
 		break;
 
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case VK_F1:
+		{
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_AUTOTILE), hWnd, AutoTileDlg);
+			break;
+		}
+		}
+		break;
+
 	case WM_DESTROY:
 		delete tilesetEditor;
 		tilesetEditor = NULL;
@@ -446,6 +519,8 @@ LRESULT CALLBACK TileSetEditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 LRESULT CALLBACK TileInfoProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static POINT targetPos;
+	static bool drag = false;
+	static POINT oldPos;
 
 	switch (message)
 	{
@@ -463,9 +538,31 @@ LRESULT CALLBACK TileInfoProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 	case WM_LBUTTONDOWN:
 	{
+		oldPos = POINT({ LOWORD(lParam), HIWORD(lParam) });
+		oldPos.x /= 32 * 5 / 4; oldPos.y /= 32 * 5 / 4;
+		drag = true;
+	}
+		break;
+
+	case WM_MOUSEMOVE:
+		if (drag)
+		{
+			POINT pos = POINT({ LOWORD(lParam), HIWORD(lParam) });
+			pos.x /= 32 * 5 / 4; pos.y /= 32 * 5 / 4;
+			if (oldPos != pos)
+			{
+				tilesetEditor->setTileData(targetPos, pos);
+				oldPos = pos;
+			}
+		}
+		break;
+
+	case WM_LBUTTONUP:
+	{
 		POINT pos = POINT({ LOWORD(lParam), HIWORD(lParam) });
-		pos.x /= 32*5/4; pos.y /= 32 * 5 / 4;
+		pos.x /= 32 * 5 / 4; pos.y /= 32 * 5 / 4;
 		tilesetEditor->setTileData(targetPos, pos);
+		drag = false;
 	}
 		break;
 
@@ -508,5 +605,53 @@ INT_PTR CALLBACK MapSettingDlg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	}
 	}
 
+	return 0;
+}
+
+INT_PTR CALLBACK AutoTileDlg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	WCHAR newPath[128];
+
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		SetDlgItemText(hWnd, IDC_EDIT1, tilesetEditor->getAutotilePath(0).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT2, tilesetEditor->getAutotilePath(1).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT3, tilesetEditor->getAutotilePath(2).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT4, tilesetEditor->getAutotilePath(3).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT5, tilesetEditor->getAutotilePath(4).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT6, tilesetEditor->getAutotilePath(5).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT7, tilesetEditor->getAutotilePath(6).c_str());
+		break;
+
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			GetDlgItemText(hWnd, IDC_EDIT1, newPath, 128);
+			tilesetEditor->loadAutoTile(0, newPath);
+			GetDlgItemText(hWnd, IDC_EDIT2, newPath, 128);
+			tilesetEditor->loadAutoTile(1, newPath);
+			GetDlgItemText(hWnd, IDC_EDIT3, newPath, 128);
+			tilesetEditor->loadAutoTile(2, newPath);
+			GetDlgItemText(hWnd, IDC_EDIT4, newPath, 128);
+			tilesetEditor->loadAutoTile(3, newPath);
+			GetDlgItemText(hWnd, IDC_EDIT5, newPath, 128);
+			tilesetEditor->loadAutoTile(4, newPath);
+			GetDlgItemText(hWnd, IDC_EDIT6, newPath, 128);
+			tilesetEditor->loadAutoTile(5, newPath);
+			GetDlgItemText(hWnd, IDC_EDIT7, newPath, 128);
+			tilesetEditor->loadAutoTile(6, newPath);
+			EndDialog(hWnd, 0);
+			break;
+
+		case IDCANCEL:
+			EndDialog(hWnd, 0);
+			break;
+		}
+	}
+
+	}
 	return 0;
 }

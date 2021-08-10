@@ -2,6 +2,7 @@
 #include "wndControl.h"
 #include "gridMap.h"
 #include "pointVector.h"
+#include "autoTile.h"
 #include <commdlg.h>
 #include <fstream>
 #include <string>
@@ -15,7 +16,7 @@ TilesetEditor::TilesetEditor(HWND owner, std::wstring path) : hWndOwner(owner)
 	sprite = Image::FromFile(path.c_str());
 	SetClientSize(owner, sprite->GetWidth(), sprite->GetHeight() + TILE_PIXEL);
 	currentPos = { -1, -1 };
-	selectPos = { -1, -1 };
+	selectPos = { 0, 0 };
 
 	grid = new Bitmap(sprite->GetWidth(), sprite->GetHeight() + TILE_PIXEL, PixelFormat64bppARGB);
 	Graphics g(grid);
@@ -46,6 +47,15 @@ TilesetEditor::TilesetEditor(HWND owner, std::wstring path) : hWndOwner(owner)
 	render();
 }
 
+TilesetEditor::~TilesetEditor()
+{
+	for (int i = 0; i < 5; i++)
+		if (!autoTile[i])
+			delete autoTile[i];
+	delete sprite;
+	delete grid;
+}
+
 void TilesetEditor::setCurrentPos(POINT mousePos)
 {
 	POINT p = getGridCoord(mousePos);
@@ -54,6 +64,7 @@ void TilesetEditor::setCurrentPos(POINT mousePos)
 	currentPos = p;
 	render();
 }
+
 
 void TilesetEditor::render()
 {
@@ -79,11 +90,29 @@ void TilesetEditor::render()
 
 	if (selectPos.x >= 0 && selectPos.y >= 0)
 	{
-		Pen pen(Color(0, 0, 255), 3);
-		Rect dest = { selectPos.x * TILE_PIXEL, selectPos.y * TILE_PIXEL, TILE_PIXEL, TILE_PIXEL };
-		g.DrawRectangle(&pen, dest);
+		if (!dragArea)
+		{
+			Pen pen(Color(0, 0, 255), 3);
+			Rect dest = { selectPos.x * TILE_PIXEL, selectPos.y * TILE_PIXEL, TILE_PIXEL, TILE_PIXEL };
+			g.DrawRectangle(&pen, dest);
+		}
+		else
+		{
+			Pen pen(Color(0, 0, 255), 3);
+			POINT startGrid = getGridCoord(dragStart);
+			POINT endGrid = getGridCoord(dragEnd);
+			Rect dest = { startGrid.x * TILE_PIXEL, startGrid.y * TILE_PIXEL,
+							(endGrid.x - startGrid.x + 1) * TILE_PIXEL,
+							(endGrid.y - startGrid.y + 1) * TILE_PIXEL };
+			g.DrawRectangle(&pen, dest);
+		}
 	}
-	
+
+	for (int i = 0; i < 7; i++)
+	{
+		if (autoTile[i])
+			autoTile[i]->drawIcon(g, POINT({ 32 * (i + 1), 0 }));
+	}
 }
 
 void TilesetEditor::drawTile(HWND hWnd)
@@ -126,11 +155,11 @@ void TilesetEditor::drawTileInfo(HWND hWnd, POINT p)
 			HDC hdc = GetDC(hWnd);
 
 			if (tileData[p.y][p.x] & mapDataMask[i][j])
-				DrawText(hdc, L"o", wcslen(L"o"),
+				DrawText(hdc, L"x", wcslen(L"x"),
 					&RECT({ j * offsetX, i * offsetY, (j + 1)*offsetX, (i + 1)*offsetY }),
 					DT_CENTER | DT_VCENTER);
 			else
-				DrawText(hdc, L"x", wcslen(L"x"),
+				DrawText(hdc, L"o", wcslen(L"o"),
 					&RECT({ j * offsetX, i * offsetY, (j + 1)*offsetX, (i + 1)*offsetY }),
 					DT_CENTER | DT_VCENTER);
 
@@ -147,13 +176,61 @@ void TilesetEditor::setTileData(POINT targetTile, POINT targetData)
 		tileData[targetTile.y][targetTile.x] ^ mapDataMask[targetData.y][targetData.x];
 }
 
-void TilesetEditor::setSelectPos(POINT mousePos)
+void TilesetEditor::selectTile(POINT p1, POINT p2)
+{
+	POINT start = { p1.x < p2.x ? p1.x : p2.x, p1.y < p2.y ? p1.y : p2.y };
+	POINT end = { p1.x > p2.x ? p1.x : p2.x, p1.y > p2.y ? p1.y : p2.y };
+
+	if (getGridCoord(start) == getGridCoord(end))
+	{
+		selectTile(start);
+		dragArea = false;
+		return;
+	}
+	else
+	{
+		selectTile(start);
+		dragStart = start;
+		dragEnd = end;
+		dragArea = true;
+	}
+}
+
+wstring TilesetEditor::getAutotilePath(int i)
+{
+	if (i > 7)
+		return L"";
+	if (autoTile[i] == NULL)
+		return L"";
+	return autoTile[i]->path;
+}
+
+void TilesetEditor::loadAutoTile(int i, std::wstring path)
+{
+	if (i > 7)
+		return;
+	if (autoTile[i])
+		if (autoTile[i]->path == path)
+			return;
+	if (autoTile[i])
+		delete autoTile[i];
+	if (path != L"")
+	{
+		autoTile[i] = new Autotile(path, POINT({ i + 1, 0 }));
+	}
+	else
+	{
+		autoTile[i] = nullptr;
+	}
+
+}
+
+void TilesetEditor::selectTile(POINT mousePos)
 {
 	POINT p = getGridCoord(mousePos);
 	if (p == selectPos)
 		return;
 	selectPos = p;
-	render();
 }
 
 void TilesetEditor::save()
@@ -164,6 +241,12 @@ void TilesetEditor::save()
 	{
 		file << spriteName << L"\n";
 		file << tileData[0].size() << ' ' << tileData.size() << '\n';
+		for (int i = 0; i < 7; i++)
+		{
+			if(autoTile[i])
+				file << autoTile[i]->path << ' ';
+		}
+		file << '\n';
 		for (int i = 0; i < tileData.size(); i++)
 		{
 			for (int j = 0; j < tileData[0].size(); j++)
@@ -176,3 +259,4 @@ void TilesetEditor::save()
 
 	file.close();
 }
+

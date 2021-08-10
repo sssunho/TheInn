@@ -13,6 +13,7 @@ using std::string;
 
 class SpriteManager;
 class MapManager;
+class Autotile;
 
 enum TransformType { NONE, FLIP_X, FLIP_Y };
 
@@ -50,6 +51,7 @@ public:
 class SpriteManager
 {
 	friend class MapManager;
+	friend class Autotile;
 
 private:
 	SpriteManager();
@@ -60,9 +62,12 @@ private:
 	map<string, map<string, Rect>> dataMap;
 	map<string, Image*> imageMap;
 	map<string, Image*> tilesetMap;
+	map<string, Image*> autotileMap;
 
 	void loadImage(std::wstring path, std::string name);
 	Gdiplus::Image* getTilesetSprite(std::string name) { return tilesetMap[name]; };
+	Gdiplus::Image* getAutotileSprite(std::string name) { return autotileMap[name]; }
+
 
 public:
 

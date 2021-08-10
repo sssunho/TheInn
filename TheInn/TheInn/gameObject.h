@@ -2,6 +2,7 @@
 #ifndef __GAMEOBJ__
 #define __GAMEOBJ__
 
+#include "VECTOR.h"
 #include "framework.h"
 #include "pointVector.h";
 #include "animator.h"
@@ -14,12 +15,17 @@ enum class ActorState { IDLE, ONMOVE };
 class GameObject
 {
 public:
+	VECTOR realPos;
+public:
 	POINT pos;
-	POINT vel;
-	GameObject(int x = 0, int y = 0, int vx = 0, int vy = 0) : pos(POINT({ x,y })), vel(POINT({ vx,vy })) {}
+	VECTOR vel;
+	GameObject(int x = 0, int y = 0, int vx = 0, int vy = 0) 
+		: pos(POINT({ x,y })), realPos(VECTOR({ (float)x, (float)y })), vel(VECTOR({(float)vx, (float)vy}))
+	{
+	}
 
 	virtual void draw(HDC& hdc) = 0;
-	virtual void update(float dt) { pos = dt * vel; };
+	virtual void update(float dt) { realPos = dt * vel; pos = realPos; };
 };
 
 class Actor : public GameObject
@@ -32,6 +38,8 @@ private:
 
 public:
 	Actor(int x = 0, int y = 0, DIRECTION dir = DIRECTION::D, const string spriteName = NULL);
+
+	POINT spriteOffset;
 
 	void setDirection(DIRECTION dir);
 	DIRECTION getDirection() { return dir; }
@@ -55,6 +63,8 @@ private:
 
 public:
 
+	static POINT pos;
+
 	virtual void draw(HDC& hdc) {}
 	virtual void update(float dt) { GameObject::update(dt); };
 
@@ -64,13 +74,22 @@ public:
 		return s;
 	}
 
-	bool isIn(POINT p);
+	static bool isIn(POINT p);
 
-	static POINT toScreenCoord(POINT p);
+	static POINT getPos() { return Camera::pos; }
 
-	void setPos(POINT p) { pos = p; }
+	static void Bound(POINT p);
 
-	POINT getPos() { return pos; }
+};
+
+class Collider : public GameObject
+{
+private:
+	GameObject* owner;
+	int size;
+
+public:
+	bool collision();
 };
 
 
