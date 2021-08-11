@@ -48,7 +48,7 @@ AnimationManager::AnimationManager()
 
 }
 
-Animation AnimationManager::getAnimation(string spName, string aniName)
+Animation AnimationManager::getAnimation(string spName, string aniName, bool repeat)
 {
 	SpriteManager& sm = SpriteManager::getInstance();
 	if (animationDataMap.find(aniName) == animationDataMap.end())
@@ -57,10 +57,11 @@ Animation AnimationManager::getAnimation(string spName, string aniName)
 		return Animation();
 	Animation instance(spName, aniName);
 	instance.maxFrame = animationDataMap[aniName].size();
+	instance.repeat = repeat;
 	return instance;
 }
 
-void Animation::draw(HDC& hdc, int x, int y, TransformType flag)
+void Animation::draw(HDC& hdc, int x, int y, int flag)
 {
 	AnimationManager& am = AnimationManager::getInstance();
 	SpriteManager& sm = SpriteManager::getInstance();
@@ -84,11 +85,18 @@ void AnimationManager::update()
 
 void Animation::update()
 {
-	curFrame++;
-	if (curFrame >= maxFrame)
+	if (playing)
 	{
-		curFrame = 0;/*
-		if(!repeat)
-			playing = false;*/
+		curFrame++;
+		if (curFrame >= maxFrame)
+		{
+			if (!repeat)
+			{
+				playing = false;
+				curFrame = maxFrame > 0 ? maxFrame -1 : 0;
+			}
+			else
+				curFrame = 0;
+		}
 	}
 }

@@ -24,6 +24,7 @@ private:
 	Bitmap* grid;
 	Bitmap* layer[3];
 	std::vector<std::vector<int>> blockMap;
+	std::vector<std::vector<int>> objectMap;
 
 public:
 	Map(string name, Bitmap* l1, Bitmap* l2, Bitmap* l3, Bitmap* grid = NULL);
@@ -41,6 +42,8 @@ public:
 	int getHeight() { return layer[0]->GetHeight(); }
 
 	bool isBlock(POINT p);
+	void setBlock(POINT p);
+	void unsetBlock(POINT p);
 
 	~Map()
 	{

@@ -216,6 +216,7 @@ Map* MapManager::loadMap(string mapName)
 
 	for (int i = 0; i < loadedMap->blockMap.size(); i++)
 		loadedMap->blockMap[i].resize(mapTable[mapName].nx);
+	loadedMap->objectMap = loadedMap->blockMap;
 
 	for (int i = 0; i < mapTable[mapName].ny; i++)
 	{
@@ -286,5 +287,16 @@ bool Map::isBlock(POINT p)
 		p.x >= layer[0]->GetWidth() || p.y >= layer[0]->GetHeight())
 		return true;
 	
-	return blockMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] & cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
+	return objectMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] & cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL]
+		   || blockMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] & cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
+}
+
+void Map::setBlock(POINT p)
+{
+	objectMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] |= cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
+}
+
+void Map::unsetBlock(POINT p)
+{
+	objectMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] &= ~cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
 }

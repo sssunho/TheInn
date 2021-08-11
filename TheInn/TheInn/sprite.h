@@ -3,6 +3,10 @@
 #ifndef __SPRITE__
 #define __SPRITE__
 
+#define TF_XFLIP (1)
+#define TF_YFLIP (1 << 1)
+#define TF_XYFLIP (1 << 2)
+
 #include "framework.h"
 #include <string>
 #include <map>
@@ -14,8 +18,6 @@ using std::string;
 class SpriteManager;
 class MapManager;
 class Autotile;
-
-enum TransformType { NONE, FLIP_X, FLIP_Y };
 
 class Sprite
 {
@@ -44,7 +46,7 @@ public:
 		width = ref.width; height = ref.height;
 	}
 
-	void draw(const HDC&, int x, int y, TransformType flag = TransformType::NONE);
+	void draw(const HDC&, int x, int y, int flag = 0);
 
 };
 
@@ -85,5 +87,6 @@ public:
 	bool hasThisImage(string imageName);
 	
 };
+
 
 #endif

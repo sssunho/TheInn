@@ -151,31 +151,32 @@ bool SpriteManager::hasThisImage(string imageName)
 	return imageMap.find(imageName) != imageMap.end();
 }
 
-void Sprite::draw(const HDC& hdc, int x, int y, TransformType flag)
+void Sprite::draw(const HDC& hdc, int x, int y, int flag)
 {
 	if (img == NULL)
 		return;
 	Graphics g(hdc);
 	Rect dest = { x - width / 2, y - height / 2, width, height };
-	if (flag != NONE)
+	if (flag)
 	{
-		switch (flag)
-		{
-		case FLIP_X:
+		if (flag & TF_XFLIP)
 		{
 			Matrix transformMat = { 1.0f, 0.0f, 0.0f, -1.0f,
 				0 , (float)(2 * dest.Y + height) };
 			g.SetTransform(&transformMat);
+			
 		}
-			break;
-		case FLIP_Y:
+		if (flag & TF_YFLIP)
 		{
-			float t = (float)(2 * dest.X - clientRect.right);
 			Matrix transformMat = { -1.0f, 0.0f, 0.0f, 1.0f,
 				(float)(2 * dest.X + width),0 };
 			g.SetTransform(&transformMat);
 		}
-			break;
+		if (flag & TF_XYFLIP)
+		{
+			Matrix transformMat = { -1.0f, 0.0f, 0.0f, -1.0f,
+				(float)(2 * dest.X + width),(float)(2 * dest.Y + height) };
+			g.SetTransform(&transformMat);
 		}
 	}
 	g.DrawImage(img, dest, cx, cy, width, height, UnitPixel);

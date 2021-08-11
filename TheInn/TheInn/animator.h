@@ -57,7 +57,7 @@ public:
 		curFrame = 0;
 		maxFrame = ref.maxFrame;
 		playing = true;
-		repeat = false;
+		repeat = ref.repeat;
 		collapse = false;
 	}
 
@@ -68,7 +68,7 @@ public:
 		curFrame = 0;
 		maxFrame = ref.maxFrame;
 		playing = true;
-		repeat = false;
+		repeat = ref.repeat;
 		collapse = false;
 		return *this;
 	}
@@ -77,9 +77,14 @@ public:
 
 	void release() { collapse = true; }
 
-	void draw(HDC& hdc, int x, int y, TransformType flag = NONE);
+	void draw(HDC& hdc, int x, int y, int flag = 0);
 
 	void setRepeat(bool flag) { repeat = flag; }
+
+	bool isPlaying() { return playing; }
+
+	void rewind() { curFrame = 0; playing = true; }
+
 };
 
 
@@ -107,7 +112,7 @@ public:
 		return s;
 	}
 
-	Animation getAnimation(string, string);
+	Animation getAnimation(string spName, string aniName, bool repeat = true);
 
 	void update();
 

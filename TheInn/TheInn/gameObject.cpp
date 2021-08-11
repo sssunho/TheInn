@@ -2,24 +2,65 @@
 #include "framework.h"
 #include "coordTransform.h"
 #include <string>
+#include <queue>
 
 using namespace std;
 extern RECT clientRect;
 POINT Camera::pos = { 0, 0 };
+int Camera::margin = 0;
 
-Actor::Actor(int x, int y, DIRECTION dir, string spriteName)
-	: GameObject(x, y), dir(DIRECTION::D), spriteName(spriteName)
+map<string, GameObject*> ObjectManager::objTable = map<string, GameObject*>();
+
+struct cmp
 {
-	AnimationManager& am = AnimationManager::getInstance();
+	bool operator()(GameObject* obj1, GameObject* obj2)
+	{
+		return obj1->pos.y > obj2->pos.y;
+	}
+};
+
+Actor::Actor(POINT p, POINT v, const string spriteName, DIRECTION dir, int size)
+	: GameObject(p, v), dir(DIRECTION::D), spriteName(spriteName)
+{
+	collider.pos = this->pos;
+	collider.owner = this;
+	collider.size = size;
+	animation.repeat = true;
 	setDirection(dir);
 }
 
 void Actor::setState(ActorState st)
 {
 	AnimationManager& am = AnimationManager::getInstance();
+
+	if (st == ActorState::IDLE)
+	{
+		switch (dir)
+		{
+		case DIRECTION::D:
+			animation = am.getAnimation(spriteName, "standF");
+			break;
+		case DIRECTION::R:
+		case DIRECTION::L:
+			animation = am.getAnimation(spriteName, "standS");
+			break;
+		case DIRECTION::U:
+			animation = am.getAnimation(spriteName, "standB");
+			break;
+		case DIRECTION::RU:
+		case DIRECTION::LU:
+			animation = am.getAnimation(spriteName, "standBD");
+			break;
+		case DIRECTION::LD:
+		case DIRECTION::RD:
+			animation = am.getAnimation(spriteName, "standFD");
+			break;
+		}
+	}
+
 	switch (state)
 	{
-	case ActorState::IDLE:
+	case ActorState::IDLE:					// IDLE -> STATE
 		if (st == ActorState::ONMOVE)
 		{
 			switch (dir)
@@ -44,34 +85,114 @@ void Actor::setState(ActorState st)
 				break;
 			}
 		}
-		break;
-
-	case ActorState::ONMOVE:
-		if (st == ActorState::IDLE)
+		else if (st == ActorState::VSLASH)
 		{
 			switch (dir)
 			{
 			case DIRECTION::D:
-				animation = am.getAnimation(spriteName, "standF");
+				animation = am.getAnimation(spriteName, "vslashF", false);
 				break;
 			case DIRECTION::R:
 			case DIRECTION::L:
-				animation = am.getAnimation(spriteName, "standS");
+				animation = am.getAnimation(spriteName, "vslashS", false);
 				break;
 			case DIRECTION::U:
-				animation = am.getAnimation(spriteName, "standB");
+				animation = am.getAnimation(spriteName, "vslashB", false);
 				break;
 			case DIRECTION::RU:
 			case DIRECTION::LU:
-				animation = am.getAnimation(spriteName, "standBD");
+				animation = am.getAnimation(spriteName, "vslashBD", false);
 				break;
 			case DIRECTION::LD:
 			case DIRECTION::RD:
-				animation = am.getAnimation(spriteName, "standFD");
+				animation = am.getAnimation(spriteName, "vslashFD", false);
 				break;
 			}
-			break;
 		}
+		break;
+
+	case ActorState::ONMOVE:
+		if (st == ActorState::VSLASH)
+		{
+			switch (dir)
+			{
+			case DIRECTION::D:
+				animation = am.getAnimation(spriteName, "vslashF", false);
+				break;
+			case DIRECTION::R:
+			case DIRECTION::L:
+				animation = am.getAnimation(spriteName, "vslashS", false);
+				break;
+			case DIRECTION::U:
+				animation = am.getAnimation(spriteName, "vslashB", false);
+				break;
+			case DIRECTION::RU:
+			case DIRECTION::LU:
+				animation = am.getAnimation(spriteName, "vslashBD", false);
+				break;
+			case DIRECTION::LD:
+			case DIRECTION::RD:
+				animation = am.getAnimation(spriteName, "vslashFD", false);
+				break;
+			}
+		}
+		break;
+
+	case ActorState::VSLASH:
+		if (st == ActorState::HSLASH)
+		{
+			switch (dir)
+			{
+			case DIRECTION::D:
+				animation = am.getAnimation(spriteName, "hslashF", false);
+				break;
+			case DIRECTION::R:
+			case DIRECTION::L:
+				animation = am.getAnimation(spriteName, "hslashS", false);
+				break;
+			case DIRECTION::U:
+				animation = am.getAnimation(spriteName, "hslashB", false);
+				break;
+			case DIRECTION::RU:
+			case DIRECTION::LU:
+				animation = am.getAnimation(spriteName, "hslashBD", false);
+				break;
+			case DIRECTION::LD:
+			case DIRECTION::RD:
+				animation = am.getAnimation(spriteName, "hslashFD", false);
+				break;
+			}
+
+		}
+		break;
+
+	case ActorState::HSLASH:
+		if (st == ActorState::STAB)
+		{
+			switch (dir)
+			{
+			case DIRECTION::D:
+				animation = am.getAnimation(spriteName, "stabF", false);
+				break;
+			case DIRECTION::R:
+			case DIRECTION::L:
+				animation = am.getAnimation(spriteName, "stabS", false);
+				break;
+			case DIRECTION::U:
+				animation = am.getAnimation(spriteName, "stabB", false);
+				break;
+			case DIRECTION::RU:
+			case DIRECTION::LU:
+				animation = am.getAnimation(spriteName, "stabBD", false);
+				break;
+			case DIRECTION::LD:
+			case DIRECTION::RD:
+				animation = am.getAnimation(spriteName, "stabFD", false);
+				break;
+			}
+
+		}
+		break;
 	}
 	state = st;
 }
@@ -138,27 +259,35 @@ void Actor::setDirection(DIRECTION dir)
 
 void Actor::draw(HDC& hdc)
 {
-	TransformType flag =
+	int flag = 
 		dir == DIRECTION::R || dir == DIRECTION::RU || dir == DIRECTION::RD ?
-		FLIP_Y : NONE;
+		TF_YFLIP : 0;
 	POINT drawPoint = pixelToScreen(pos) + spriteOffset;
 	animation.draw(hdc, drawPoint.x, drawPoint.y, flag);
 }
 
 void Actor::update(float dt)
 {
+	Map* test = MapManager::loadedMap;
 	animation.update();
-	VECTOR dest = realPos + dt * vel;
-	if (MapManager::loadedMap->isBlock(dest) || dest.x < 0 || dest.y < 0)
-		return;
-	realPos = dest;
-	pos = realPos;
+	VECTOR dest = pos + dt * vel;
+	collider.unset();
+	collider.pos = dest;
+	int flag = collider.collision();
+	if (!collider.collision())
+		pos = dest;
+	collider.update(dt);
 }
 
 bool Camera::isIn(POINT p)
 {
-
-	return false;
+	POINT rel = p - pos;
+	if (rel.x < -clientRect.right / 2 - margin || 
+		rel.y < -clientRect.bottom / 2 - margin ||
+		rel.x > margin + clientRect.right / 2 ||
+		rel.y > margin + clientRect.bottom / 2)
+		return false;
+	return true;
 }
 
 void Camera::Bound(POINT p)
@@ -178,4 +307,79 @@ void Camera::Bound(POINT p)
 		pos.y = height - clientRect.bottom / 2;
 	else
 		pos.y = p.y;
+}
+
+bool Collider::collision()
+{
+	for (int i = 0; i < size; i++)
+		for (int j = 0; j < size; j++)
+			if (MapManager::loadedMap->isBlock(pos + POINT({ i * CELL_PIXEL, j * CELL_PIXEL })))
+				return true;
+	return false;
+}
+
+void Collider::set()
+{
+	for (int i = 0; i < size; i++)
+		for (int j = 0; j < size; j++)
+			MapManager::loadedMap->setBlock(pos + POINT({ i * CELL_PIXEL, j * CELL_PIXEL }));
+}
+
+void Collider::unset()
+{
+	for (int i = 0; i < size; i++)
+		for (int j = 0; j < size; j++)
+			MapManager::loadedMap->unsetBlock(pos + POINT({ i * CELL_PIXEL, j * CELL_PIXEL }));
+}
+
+void Collider::update(float dt)
+{
+	pos = owner->pos;
+	set();
+}
+
+Actor* ObjectManager::createActor(string name, POINT pos, VECTOR vel, 
+									   string spriteName, DIRECTION dir, int size)
+{
+	Actor* instance = new Actor(pos, vel, spriteName, dir, size);
+	objTable.insert(pair<string, GameObject*>(name, instance));
+	return instance;
+}
+
+Actor * ObjectManager::findActor(std::string name)
+{
+	Actor* temp;
+	if (temp = dynamic_cast<Actor*>(objTable[name]))
+		return temp;
+	return nullptr;
+}
+
+void ObjectManager::draw(HDC& hdc)
+{
+	map<string, GameObject*>::iterator it;
+
+	priority_queue<GameObject*, vector<GameObject*>, cmp> pq;
+
+	for (it = objTable.begin() ; it != objTable.end() ; it++)
+	{
+		if (Camera::isIn(it->second->pos))
+			pq.push(it->second);
+	}
+
+	while (!pq.empty())
+	{
+		pq.top()->draw(hdc);
+		pq.pop();
+	}
+
+}
+
+void ObjectManager::update(float dt)
+{
+	map<string, GameObject*>::iterator it;
+
+	for (it = objTable.begin(); it != objTable.end(); it++)
+	{
+		(*it).second->update(dt);
+	}
 }
