@@ -1,13 +1,5 @@
-#include "map.h"
 #include "framework.h"
-#include "sprite.h"
-#include "wndControl.h"
-#include "pointVector.h"
-#include "autoTile.h"
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <ctime>
+#include "headers.h"
 
 using namespace std;
 using namespace Gdiplus;

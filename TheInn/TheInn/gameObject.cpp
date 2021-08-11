@@ -1,8 +1,5 @@
-#include "gameObject.h"
 #include "framework.h"
-#include "coordTransform.h"
-#include <string>
-#include <queue>
+#include "headers.h"
 
 using namespace std;
 extern RECT clientRect;

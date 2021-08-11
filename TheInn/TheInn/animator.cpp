@@ -1,4 +1,4 @@
-#include "animator.h"
+#include "headers.h"
 #include <sstream>
 
 AnimationManager::AnimationManager()
@@ -21,6 +21,7 @@ AnimationManager::AnimationManager()
 			continue;
 		while (!animationData.eof())
 		{
+			char ch;
 			Animation::FrameData frame;
 			string frameDataBuffer;
 			stringstream frameData;
@@ -30,16 +31,25 @@ AnimationManager::AnimationManager()
 			Animation::SpriteData tempSpriteData;
 
 			while (!frameData.eof())
-			{
-				char ch = frameData.get();
+			{ 
+				ch = frameData.get();
 				if (ch == '!')
 				{
 					frameData >> tempSpriteData.name >> tempSpriteData.x >> tempSpriteData.y;
-					frame.push_back(tempSpriteData);
+					frame.first.push_back(tempSpriteData);
+					frame.second = "";
 				}
+				break;
 			}
 
-			animation.push_back(frame);
+			if(ch == '!')
+				animation.push_back(frame);
+			else
+			{
+				string seName;
+				frameData >> seName;
+				animation[animation.size() - 1].second = seName;
+			}
 
 		}
 
@@ -71,10 +81,13 @@ void Animation::draw(HDC& hdc, int x, int y, int flag)
 	SpriteManager& sm = SpriteManager::getInstance();
 	FrameData frame = am.animationDataMap[animationName][curFrame];
 
-	for (int i = 0; i < frame.size(); i++)
+	if (frame.second != "")
+		SoundManager::getSE(frame.second)->play();
+
+	for (int i = 0; i < frame.first.size(); i++)
 	{
-		Sprite sprite = sm.getSprite(spriteName, frame[i].name);
-		sprite.draw(hdc, x + frame[i].x, y + frame[i].y, flag);
+		Sprite sprite = sm.getSprite(spriteName, frame.first[i].name);
+		sprite.draw(hdc, x + frame.first[i].x, y + frame.first[i].y, flag);
 	}
 }
 

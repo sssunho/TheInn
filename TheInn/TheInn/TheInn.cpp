@@ -3,8 +3,7 @@
 
 #include "framework.h"
 #include "TheInn.h"
-#include "gameplay.h"
-#include "wndControl.h"
+#include "headers.h"
 #include <memory>
 
 using namespace Gdiplus;
@@ -46,6 +45,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (GdiplusStartup(&gpToken, &gpsi, NULL) != Ok) return 0;
 
+	CSound::Init();
+
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_THEINN, szWindowClass, MAX_LOADSTRING);
@@ -86,6 +87,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	ReleaseDC(ghWnd, hMainDC);
 
 	GdiplusShutdown(gpToken);
+
+	CSound::Release();
 
     return (int) msg.wParam;
 }

@@ -28,7 +28,7 @@ private:
 		int y;
 	};
 
-	typedef vector<SpriteData> FrameData;
+	typedef pair<vector<SpriteData>, string> FrameData;
 	typedef vector<FrameData> AnimationData;
 
 	string animationName;

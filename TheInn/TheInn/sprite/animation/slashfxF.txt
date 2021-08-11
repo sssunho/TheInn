@@ -8,6 +8,7 @@
 !NONE 0 0
 !NONE 0 0
 !F1 0 0
+~Slash10.ogg
 !F2 0 0
 !F3 0 0
 !F4 0 0

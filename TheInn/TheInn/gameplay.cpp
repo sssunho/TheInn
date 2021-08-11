@@ -1,11 +1,5 @@
 #include "framework.h"
-#include "gameplay.h"
-#include "sprite.h"
-#include "animator.h"
-#include "map.h"
-#include "gameObject.h"
-#include "wndControl.h"
-#include "coordTransform.h"
+#include "headers.h"
 #include <ctime>
 
 extern HWND ghWnd;
@@ -41,6 +35,7 @@ void test()
 
 	if (test)
 	{
+		SoundManager::init();
 		mmm = m.loadMap("debugZone.mapdata");
 		actor->setState(ActorState::ONMOVE);
 		test = false;
