@@ -1,1 +1,1 @@
-standS 0 0
+!standS 0 0

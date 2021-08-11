@@ -154,6 +154,7 @@ void playerHit()
 				actor->setState(ActorState::HSLASH);
 			else if (combo == 1)
 				actor->setState(ActorState::STAB);
+			ani.rewind();
 			combo++;
 			
 		}

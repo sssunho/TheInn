@@ -31,8 +31,12 @@ AnimationManager::AnimationManager()
 
 			while (!frameData.eof())
 			{
-				frameData >> tempSpriteData.name >> tempSpriteData.x >> tempSpriteData.y;
-				frame.push_back(tempSpriteData);
+				char ch = frameData.get();
+				if (ch == '!')
+				{
+					frameData >> tempSpriteData.name >> tempSpriteData.x >> tempSpriteData.y;
+					frame.push_back(tempSpriteData);
+				}
 			}
 
 			animation.push_back(frame);
