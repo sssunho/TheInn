@@ -10,6 +10,8 @@
 #include "sprite.h"
 #include "wndControl.h"
 #include "sound.h"
+#include "BT.h"
+#include "timer.h"
 
 #include <vector>
 #include <queue>
@@ -19,3 +21,4 @@
 #include <sstream>
 #include <ctime>
 #include <string>
+#include <ctime>

@@ -7,14 +7,8 @@ POINT Camera::pos = { 0, 0 };
 int Camera::margin = 0;
 
 map<string, GameObject*> ObjectManager::objTable = map<string, GameObject*>();
-
-struct cmp
-{
-	bool operator()(GameObject* obj1, GameObject* obj2)
-	{
-		return obj1->pos.y > obj2->pos.y;
-	}
-};
+list<GameObject*> ObjectManager::fxList;
+priority_queue<GameObject*, vector<GameObject*>, ObjectManager::cmp> ObjectManager::pq;
 
 Actor::Actor(POINT p, POINT v, const string spriteName, DIRECTION dir, int size)
 	: GameObject(p, v), dir(DIRECTION::D), spriteName(spriteName)
@@ -265,7 +259,6 @@ void Actor::draw(HDC& hdc)
 
 void Actor::update(float dt)
 {
-	Map* test = MapManager::loadedMap;
 	animation.update();
 	VECTOR dest = pos + dt * vel;
 	collider.unset();
@@ -343,26 +336,22 @@ Actor* ObjectManager::createActor(string name, POINT pos, VECTOR vel,
 	return instance;
 }
 
+void ObjectManager::createFX(string spriteName, string aniName, POINT pos, DIRECTION dir)
+{
+	SpriteFX* instance = new SpriteFX(pos, spriteName, aniName, dir);
+	fxList.push_back(instance);
+}
+
 Actor * ObjectManager::findActor(std::string name)
 {
 	Actor* temp;
-	if (temp = dynamic_cast<Actor*>(objTable[name]))
-		return temp;
+	if (objTable.find(name) != objTable.end())
+		return static_cast<Actor*>(objTable[name]);
 	return nullptr;
 }
 
 void ObjectManager::draw(HDC& hdc)
 {
-	map<string, GameObject*>::iterator it;
-
-	priority_queue<GameObject*, vector<GameObject*>, cmp> pq;
-
-	for (it = objTable.begin() ; it != objTable.end() ; it++)
-	{
-		if (Camera::isIn(it->second->pos))
-			pq.push(it->second);
-	}
-
 	while (!pq.empty())
 	{
 		pq.top()->draw(hdc);
@@ -374,9 +363,69 @@ void ObjectManager::draw(HDC& hdc)
 void ObjectManager::update(float dt)
 {
 	map<string, GameObject*>::iterator it;
+	list<GameObject*>::iterator lit;
+
+	for (it = objTable.begin(); it != objTable.end(); )
+	{
+		if (it->second->destroy)
+		{
+			delete it->second;
+			it = objTable.erase(it);
+		}
+		else
+			it++;
+	}
+
+	for (lit = fxList.begin(); lit != fxList.end(); )
+	{
+		if ((*lit)->destroy)
+		{
+			delete (*lit);
+			lit = fxList.erase(lit);
+		}
+		else
+		{
+			(*lit)->update(dt);
+			lit++;
+		}
+	}
 
 	for (it = objTable.begin(); it != objTable.end(); it++)
 	{
 		(*it).second->update(dt);
 	}
+
+	for (it = objTable.begin(); it != objTable.end(); it++)
+	{
+		if (Camera::isIn(it->second->pos))
+			pq.push(it->second);
+	}
+
+	for (lit = fxList.begin(); lit != fxList.end(); )
+	{
+		if (Camera::isIn((*lit)->pos))
+			pq.push(*(lit++));
+		else
+			lit++;
+	}
 }
+
+SpriteFX::SpriteFX(POINT p, const string spriteName, const string aniName, DIRECTION dir)
+	: Actor(p, { 0, 0 }, spriteName, dir)
+{
+	animation = AnimationManager::getInstance().getAnimation(spriteName, aniName, false);
+}
+
+void SpriteFX::update(float dt)
+{
+	animation.update();
+	if (!animation.isPlaying())
+		destroyObj();
+}
+
+void SpriteFX::draw(HDC & hdc)
+{
+	POINT drawPoint = pixelToScreen(pos) + spriteOffset;
+	animation.draw(hdc, drawPoint.x, drawPoint.y);
+}
+

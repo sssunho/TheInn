@@ -25,3 +25,7 @@ stabBD
 stabB
 stabFD
 slashfxF
+slashfxS
+slashfxB
+slashfxBD
+slashfxFD

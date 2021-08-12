@@ -18,6 +18,7 @@ class AnimationManager;
 class Animation
 {
 	friend class AnimationManager;
+	friend class AnimationObj;
 	friend class Actor;
 
 private:
@@ -101,8 +102,8 @@ private:
 	~AnimationManager() {};
 
 	map<string, Animation::AnimationData> animationDataMap;
-	list<Animation*> animationInstArr;
-	void eraseInst(Animation* ani) { animationInstArr.remove(ani); }
+	list<Animation*> spriteFXList;
+	void eraseInst(Animation* ani) { spriteFXList.remove(ani); }
 
 public:
 
@@ -115,6 +116,8 @@ public:
 	Animation getAnimation(string spName, string aniName, bool repeat = true);
 
 	void update();
+
+	void draw();
 
 };
 

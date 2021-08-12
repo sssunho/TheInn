@@ -8,16 +8,20 @@
 #include "animator.h"
 #include "map.h"
 #include <string>
+#include <queue>
 
 enum class DIRECTION { NONE = 0, D = 1, R = 2, RD = 3, U = 4, RU = 6, L = 8, LD = 9, LU = 12 };
 enum class ActorState { IDLE, ONMOVE, VSLASH, HSLASH, STAB };
 
 class GameObject
 {
+	friend class ObjectManager;
+private:
+	bool destroy;
 public:
 	VECTOR pos;
 	VECTOR vel;
-	GameObject(POINT p = { 0, 0 }, POINT v = {0, 0})
+	GameObject(POINT p = { 0, 0 }, POINT v = {0, 0}) : destroy(false)
 	{
 		pos.x = p.x;
 		pos.y = p.y;
@@ -26,6 +30,7 @@ public:
 	}
 	virtual void draw(HDC& hdc) = 0;
 	virtual void update(float dt) { pos = dt * vel; };
+	void destroyObj() { destroy = true; }
 };
 
 class Collider : public GameObject
@@ -51,11 +56,12 @@ class Actor : public GameObject
 private:
 	DIRECTION dir;
 	ActorState state;
+	Collider collider;
+	int HP = 0;
+
+protected:
 	string spriteName;
 	Animation animation;
-	Collider collider;
-
-	int HP = 0;
 
 public:
 	Actor(POINT p = { 0, 0 }, 
@@ -112,6 +118,17 @@ public:
 
 };
 
+class SpriteFX : public Actor
+{
+private:
+	SpriteFX();
+public:
+	SpriteFX(POINT p, const string spriteName, const string aniName, DIRECTION dir);
+
+	virtual void update(float dt);
+	virtual void draw(HDC& hdc);
+};
+
 class ObjectManager
 {
 private:
@@ -119,7 +136,18 @@ private:
 	ObjectManager(const ObjectManager& ref) {}
 	MapManager& operator=(const MapManager& ref) {}
 
+	struct cmp
+	{
+		bool operator()(GameObject* obj1, GameObject* obj2)
+		{
+			return obj1->pos.y > obj2->pos.y;
+		}
+	};
+
 	static std::map<std::string, GameObject*> objTable;
+	static std::list<GameObject*> fxList;
+
+	static std::priority_queue<GameObject*, vector<GameObject*>, cmp> pq;
 
 public:
 	static ObjectManager& getInstance()
@@ -129,8 +157,10 @@ public:
 	}
 
 	static Actor* createActor(std::string name, POINT pos, VECTOR vel, 
-								   std::string SpriteName, DIRECTION dir = DIRECTION::D,
-								   int size = 1);
+							  std::string SpriteName, DIRECTION dir = DIRECTION::D,
+							  int size = 1);
+
+	static void createFX(std::string spriteName, std::string aniName, POINT pos, DIRECTION dir);
 
 	static Actor* findActor(std::string name);
 	

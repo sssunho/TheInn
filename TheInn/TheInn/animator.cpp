@@ -95,7 +95,7 @@ void AnimationManager::update()
 {
 	list<Animation*>::iterator it;
 
-	for (it = animationInstArr.begin(); it != animationInstArr.end(); it++)
+	for (it = spriteFXList.begin(); it != spriteFXList.end(); it++)
 		(*it)->update();
 
 }
