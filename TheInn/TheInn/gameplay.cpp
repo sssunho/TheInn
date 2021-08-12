@@ -25,7 +25,6 @@ void test()
 	actor->spriteOffset = { 0, -16 };
 	enemy->spriteOffset = { 0, -16 };
 	static bool test = true;
-	static PlayerBT bt(actor);
 
 	if (test)
 	{
@@ -58,7 +57,6 @@ void test()
 			input = true;
 
 		ObjectManager::draw(hBufferDC);
-		bt.Invoke();
 
 		mmm->draw(hBufferDC, Camera::pos - POINT({ clientRect.right / 2, clientRect.bottom / 2 }), 2);
 
@@ -68,7 +66,7 @@ void test()
 }
 
 void playerHit()
-{/*
+{
 	static int combo = 0;
 	static Actor* actor = ObjectManager::findActor("actor");
 	static Animation ani = AnimationManager::getInstance().getAnimation("slash", "slashfxF", false);
@@ -91,11 +89,11 @@ void playerHit()
 		else
 		{
 			ani.rewind();
-			playerEvent = playerMove;
+			//playerEvent = playerMove;
 			actor->setState(ActorState::IDLE);
 			combo = 0;
 		}
-	}*/
+	}
 }
 
 void run()

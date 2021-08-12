@@ -53,6 +53,8 @@ public:
 
 class Actor : public GameObject
 {
+	friend class StateMachine;
+
 private:
 	DIRECTION dir;
 	ActorState state;
@@ -118,10 +120,13 @@ public:
 
 };
 
-class SpriteFX : public Actor
+class SpriteFX : public GameObject
 {
 private:
 	SpriteFX();
+	string SpriteName;
+	Animation animation;
+
 public:
 	SpriteFX(POINT p, const string spriteName, const string aniName, DIRECTION dir);
 

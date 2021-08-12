@@ -340,6 +340,7 @@ void ObjectManager::createFX(string spriteName, string aniName, POINT pos, DIREC
 {
 	SpriteFX* instance = new SpriteFX(pos, spriteName, aniName, dir);
 	fxList.push_back(instance);
+	pq.push(instance);
 }
 
 Actor * ObjectManager::findActor(std::string name)
@@ -411,7 +412,7 @@ void ObjectManager::update(float dt)
 }
 
 SpriteFX::SpriteFX(POINT p, const string spriteName, const string aniName, DIRECTION dir)
-	: Actor(p, { 0, 0 }, spriteName, dir)
+	: GameObject(p, { 0, 0 })
 {
 	animation = AnimationManager::getInstance().getAnimation(spriteName, aniName, false);
 }
@@ -425,7 +426,7 @@ void SpriteFX::update(float dt)
 
 void SpriteFX::draw(HDC & hdc)
 {
-	POINT drawPoint = pixelToScreen(pos) + spriteOffset;
+	POINT drawPoint = pixelToScreen(pos);
 	animation.draw(hdc, drawPoint.x, drawPoint.y);
 }
 

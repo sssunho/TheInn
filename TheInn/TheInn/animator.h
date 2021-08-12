@@ -20,6 +20,7 @@ class Animation
 	friend class AnimationManager;
 	friend class AnimationObj;
 	friend class Actor;
+	friend class SpriteFX;
 
 private:
 	struct SpriteData
