@@ -159,7 +159,10 @@
   <ItemGroup>
     <ClInclude Include="animator.h" />
     <ClInclude Include="autoTile.h" />
+    <ClInclude Include="enemy.h" />
     <ClInclude Include="fsm.h" />
+    <ClInclude Include="geometry.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="coordTransform.h" />
     <ClInclude Include="framework.h" />
@@ -180,10 +183,12 @@
     <ClCompile Include="animator.cpp" />
     <ClCompile Include="autoTile.cpp" />
     <ClCompile Include="coordTransform.cpp" />
+    <ClCompile Include="enemy.cpp" />
     <ClCompile Include="fsm.cpp" />
     <ClCompile Include="gameObject.cpp" />
     <ClCompile Include="gameplay.cpp" />
     <ClCompile Include="map.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="pointVector.cpp" />
     <ClCompile Include="sound.cpp" />
     <ClCompile Include="sprite.cpp" />

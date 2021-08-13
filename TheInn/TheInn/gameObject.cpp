@@ -6,8 +6,10 @@ extern RECT clientRect;
 POINT Camera::pos = { 0, 0 };
 int Camera::margin = 0;
 
+extern HDC hMainDC;
+
 map<string, GameObject*> ObjectManager::objTable = map<string, GameObject*>();
-list<GameObject*> ObjectManager::fxList;
+list<GameObject*> ObjectManager::objList;
 priority_queue<GameObject*, vector<GameObject*>, ObjectManager::cmp> ObjectManager::pq;
 
 Actor::Actor(POINT p, POINT v, const string spriteName, DIRECTION dir, int size)
@@ -17,235 +19,51 @@ Actor::Actor(POINT p, POINT v, const string spriteName, DIRECTION dir, int size)
 	collider.owner = this;
 	collider.size = size;
 	animation.repeat = true;
-	setDirection(dir);
+	Sprite sprite = SpriteManager::getInstance().getSprite(spriteName, "standF");
+	int width = sprite.getWidth();
+	int height = sprite.getHeight();
+	spriteOffset = { (size / 2)*CELL_PIXEL, height / 2 - (size / 2)*CELL_PIXEL };
 }
 
-void Actor::setState(ActorState st)
+void Actor::setAnimation(string name, bool repeat)
 {
-	AnimationManager& am = AnimationManager::getInstance();
-
-	if (st == ActorState::IDLE)
-	{
-		switch (dir)
-		{
-		case DIRECTION::D:
-			animation = am.getAnimation(spriteName, "standF");
-			break;
-		case DIRECTION::R:
-		case DIRECTION::L:
-			animation = am.getAnimation(spriteName, "standS");
-			break;
-		case DIRECTION::U:
-			animation = am.getAnimation(spriteName, "standB");
-			break;
-		case DIRECTION::RU:
-		case DIRECTION::LU:
-			animation = am.getAnimation(spriteName, "standBD");
-			break;
-		case DIRECTION::LD:
-		case DIRECTION::RD:
-			animation = am.getAnimation(spriteName, "standFD");
-			break;
-		}
-	}
-
-	switch (state)
-	{
-	case ActorState::IDLE:					// IDLE -> STATE
-		if (st == ActorState::ONMOVE)
-		{
-			switch (dir)
-			{
-			case DIRECTION::D:
-				animation = am.getAnimation(spriteName, "walkF");
-				break;
-			case DIRECTION::R:
-			case DIRECTION::L:
-				animation = am.getAnimation(spriteName, "walkS");
-				break;
-			case DIRECTION::U:
-				animation = am.getAnimation(spriteName, "walkB");
-				break;
-			case DIRECTION::RU:
-			case DIRECTION::LU:
-				animation = am.getAnimation(spriteName, "walkBD");
-				break;
-			case DIRECTION::LD:
-			case DIRECTION::RD:
-				animation = am.getAnimation(spriteName, "walkFD");
-				break;
-			}
-		}
-		else if (st == ActorState::VSLASH)
-		{
-			switch (dir)
-			{
-			case DIRECTION::D:
-				animation = am.getAnimation(spriteName, "vslashF", false);
-				break;
-			case DIRECTION::R:
-			case DIRECTION::L:
-				animation = am.getAnimation(spriteName, "vslashS", false);
-				break;
-			case DIRECTION::U:
-				animation = am.getAnimation(spriteName, "vslashB", false);
-				break;
-			case DIRECTION::RU:
-			case DIRECTION::LU:
-				animation = am.getAnimation(spriteName, "vslashBD", false);
-				break;
-			case DIRECTION::LD:
-			case DIRECTION::RD:
-				animation = am.getAnimation(spriteName, "vslashFD", false);
-				break;
-			}
-		}
-		break;
-
-	case ActorState::ONMOVE:
-		if (st == ActorState::VSLASH)
-		{
-			switch (dir)
-			{
-			case DIRECTION::D:
-				animation = am.getAnimation(spriteName, "vslashF", false);
-				break;
-			case DIRECTION::R:
-			case DIRECTION::L:
-				animation = am.getAnimation(spriteName, "vslashS", false);
-				break;
-			case DIRECTION::U:
-				animation = am.getAnimation(spriteName, "vslashB", false);
-				break;
-			case DIRECTION::RU:
-			case DIRECTION::LU:
-				animation = am.getAnimation(spriteName, "vslashBD", false);
-				break;
-			case DIRECTION::LD:
-			case DIRECTION::RD:
-				animation = am.getAnimation(spriteName, "vslashFD", false);
-				break;
-			}
-		}
-		break;
-
-	case ActorState::VSLASH:
-		if (st == ActorState::HSLASH)
-		{
-			switch (dir)
-			{
-			case DIRECTION::D:
-				animation = am.getAnimation(spriteName, "hslashF", false);
-				break;
-			case DIRECTION::R:
-			case DIRECTION::L:
-				animation = am.getAnimation(spriteName, "hslashS", false);
-				break;
-			case DIRECTION::U:
-				animation = am.getAnimation(spriteName, "hslashB", false);
-				break;
-			case DIRECTION::RU:
-			case DIRECTION::LU:
-				animation = am.getAnimation(spriteName, "hslashBD", false);
-				break;
-			case DIRECTION::LD:
-			case DIRECTION::RD:
-				animation = am.getAnimation(spriteName, "hslashFD", false);
-				break;
-			}
-
-		}
-		break;
-
-	case ActorState::HSLASH:
-		if (st == ActorState::STAB)
-		{
-			switch (dir)
-			{
-			case DIRECTION::D:
-				animation = am.getAnimation(spriteName, "stabF", false);
-				break;
-			case DIRECTION::R:
-			case DIRECTION::L:
-				animation = am.getAnimation(spriteName, "stabS", false);
-				break;
-			case DIRECTION::U:
-				animation = am.getAnimation(spriteName, "stabB", false);
-				break;
-			case DIRECTION::RU:
-			case DIRECTION::LU:
-				animation = am.getAnimation(spriteName, "stabBD", false);
-				break;
-			case DIRECTION::LD:
-			case DIRECTION::RD:
-				animation = am.getAnimation(spriteName, "stabFD", false);
-				break;
-			}
-
-		}
-		break;
-	}
-	state = st;
+	animation = AnimationManager::getInstance().getAnimation(spriteName, name, repeat);
 }
 
 void Actor::setDirection(DIRECTION dir)
 {
-	AnimationManager& am = AnimationManager::getInstance();
-	switch (state)
-	{
-	case ActorState::IDLE:
-	{
-		switch (dir)
-		{
-		case DIRECTION::D:
-			animation = am.getAnimation(spriteName, "standF");
-			break;
-		case DIRECTION::R:
-		case DIRECTION::L:
-			animation = am.getAnimation(spriteName, "standS");
-			break;
-		case DIRECTION::U:
-			animation = am.getAnimation(spriteName, "standB");
-			break;
-		case DIRECTION::RU:
-		case DIRECTION::LU:
-			animation = am.getAnimation(spriteName, "standBD");
-			break;
-		case DIRECTION::LD:
-		case DIRECTION::RD:
-			animation = am.getAnimation(spriteName, "standFD");
-			break;
-		}
-	}
-		break;
-
-	case ActorState::ONMOVE:
-	{
-		switch (dir)
-		{
-		case DIRECTION::D:
-			animation = am.getAnimation(spriteName, "walkF");
-			break;
-		case DIRECTION::R:
-		case DIRECTION::L:
-			animation = am.getAnimation(spriteName, "walkS");
-			break;
-		case DIRECTION::U:
-			animation = am.getAnimation(spriteName, "walkB");
-			break;
-		case DIRECTION::RU:
-		case DIRECTION::LU:
-			animation = am.getAnimation(spriteName, "walkBD");
-			break;
-		case DIRECTION::LD:
-		case DIRECTION::RD:
-			animation = am.getAnimation(spriteName, "walkFD");
-			break;
-		}
-	}
-		break;
-	}
 	Actor::dir = dir;
+}
+
+void Actor::setSpeed(float f)
+{
+	switch (dir)
+	{
+	case DIRECTION::L:
+		vel = { -f, 0 };
+		break;
+	case DIRECTION::R:
+		vel = { f, 0 };
+		break;
+	case DIRECTION::U:
+		vel = { 0, -f };
+		break;
+	case DIRECTION::D:
+		vel = { 0, f };
+		break;
+	case DIRECTION::LU:
+		vel = { -f / 1.4f, -f / 1.4f };
+		break;
+	case DIRECTION::RU:
+		vel = { f / 1.4f, -f / 1.4f };
+		break;
+	case DIRECTION::LD:
+		vel = { -f / 1.4f, f / 1.4f };
+		break;
+	case DIRECTION::RD:
+		vel = { f / 1.4f, f / 1.4f };
+		break;
+	}
 }
 
 void Actor::draw(HDC& hdc)
@@ -260,12 +78,29 @@ void Actor::draw(HDC& hdc)
 void Actor::update(float dt)
 {
 	animation.update();
-	VECTOR dest = pos + dt * vel;
+	VECTOR ds = dt * vel;
+	VECTOR remain = { abs(ds.x), abs(ds.y) };
 	collider.unset();
-	collider.pos = dest;
-	int flag = collider.collision();
-	if (!collider.collision())
-		pos = dest;
+	while (remain.x > 0)
+	{
+		float unit = abs(ds.x) > CELL_PIXEL ? (ds.x > 0 ? 1 : -1) * CELL_PIXEL : ds.x;
+		collider.pos.x += unit;
+		ds.x -= unit;
+		remain.x -= abs(unit);
+		if (collider.collision())
+			break;
+		pos.x = collider.pos.x;
+	}
+	while (remain.y > 0)
+	{
+		float unit = abs(ds.y) > CELL_PIXEL ? (ds.y > 0 ? 1 : -1) * CELL_PIXEL : ds.y;
+		collider.pos.y += unit;
+		ds.y -= unit;
+		remain.y -= abs(unit);
+		if (collider.collision())
+			break;
+		pos.y = collider.pos.y;
+	}
 	collider.update(dt);
 }
 
@@ -332,14 +167,16 @@ Actor* ObjectManager::createActor(string name, POINT pos, VECTOR vel,
 									   string spriteName, DIRECTION dir, int size)
 {
 	Actor* instance = new Actor(pos, vel, spriteName, dir, size);
+	instance->setAnimation("standF");
 	objTable.insert(pair<string, GameObject*>(name, instance));
+	objList.push_back(instance);
 	return instance;
 }
 
-void ObjectManager::createFX(string spriteName, string aniName, POINT pos, DIRECTION dir)
+void ObjectManager::createFX(string spriteName, string aniName, POINT pos, int flag)
 {
-	SpriteFX* instance = new SpriteFX(pos, spriteName, aniName, dir);
-	fxList.push_back(instance);
+	SpriteFX* instance = new SpriteFX(pos, spriteName, aniName, flag);
+	objList.push_back(instance);
 	pq.push(instance);
 }
 
@@ -349,6 +186,12 @@ Actor * ObjectManager::findActor(std::string name)
 	if (objTable.find(name) != objTable.end())
 		return static_cast<Actor*>(objTable[name]);
 	return nullptr;
+}
+
+void ObjectManager::registerObj(string name, GameObject * obj)
+{
+	objTable.insert(pair<string, GameObject*>(name, obj));
+	objList.push_back(obj);
 }
 
 void ObjectManager::draw(HDC& hdc)
@@ -366,43 +209,28 @@ void ObjectManager::update(float dt)
 	map<string, GameObject*>::iterator it;
 	list<GameObject*>::iterator lit;
 
-	for (it = objTable.begin(); it != objTable.end(); )
-	{
-		if (it->second->destroy)
-		{
-			delete it->second;
-			it = objTable.erase(it);
-		}
-		else
-			it++;
-	}
-
-	for (lit = fxList.begin(); lit != fxList.end(); )
+	for (lit = objList.begin(); lit != objList.end(); )
 	{
 		if ((*lit)->destroy)
 		{
 			delete (*lit);
-			lit = fxList.erase(lit);
+			lit = objList.erase(lit);
 		}
 		else
 		{
-			(*lit)->update(dt);
+			if ((*lit)->mState)
+			{
+				(*lit)->mState->update(*lit, dt);
+			}
+			else
+			{
+				(*lit)->update(dt);
+			}
 			lit++;
 		}
 	}
 
-	for (it = objTable.begin(); it != objTable.end(); it++)
-	{
-		(*it).second->update(dt);
-	}
-
-	for (it = objTable.begin(); it != objTable.end(); it++)
-	{
-		if (Camera::isIn(it->second->pos))
-			pq.push(it->second);
-	}
-
-	for (lit = fxList.begin(); lit != fxList.end(); )
+	for (lit = objList.begin(); lit != objList.end(); )
 	{
 		if (Camera::isIn((*lit)->pos))
 			pq.push(*(lit++));
@@ -411,8 +239,18 @@ void ObjectManager::update(float dt)
 	}
 }
 
-SpriteFX::SpriteFX(POINT p, const string spriteName, const string aniName, DIRECTION dir)
-	: GameObject(p, { 0, 0 })
+void ObjectManager::forEachInArea(Area * area, int param, void(*func)(GameObject *, int))
+{
+	list<GameObject*>::iterator it;
+	for (it = objList.begin(); it != objList.end(); it++)
+	{
+		if(area->isIn((*it)->pos))
+			func(*it, param);
+	}
+}
+
+SpriteFX::SpriteFX(POINT p, const string spriteName, const string aniName, int flag)
+	: GameObject(p, { 0, 0 }), flag(flag)
 {
 	animation = AnimationManager::getInstance().getAnimation(spriteName, aniName, false);
 }
@@ -427,6 +265,23 @@ void SpriteFX::update(float dt)
 void SpriteFX::draw(HDC & hdc)
 {
 	POINT drawPoint = pixelToScreen(pos);
-	animation.draw(hdc, drawPoint.x, drawPoint.y);
+	animation.draw(hdc, drawPoint.x, drawPoint.y, flag);
 }
 
+void GameObject::setState(StateMachine * state)
+{
+	if (StateMachine* newState = mState->setState(this, state))
+	{
+		mState = newState;
+	}
+}
+
+void damageTo(GameObject* target, int damage)
+{
+	Enemy* enemy;
+	if(enemy = dynamic_cast<Enemy*>(target))
+	{
+		enemy->HP -= damage;
+		enemy->setState(new HIT);
+	}
+}

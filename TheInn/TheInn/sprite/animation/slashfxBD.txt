@@ -1,12 +1,3 @@
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
 !BD1 0 0
 ~Slash10.ogg
 !BD2 0 0

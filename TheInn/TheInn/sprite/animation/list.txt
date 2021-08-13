@@ -29,3 +29,17 @@ slashfxS
 slashfxB
 slashfxBD
 slashfxFD
+rslashfxF
+rslashfxS
+rslashfxB
+rslashfxBD
+rslashfxFD
+hit
+hit4dL
+hit4dR
+hit4dF
+hit4dB
+stand4dF
+stand4dB
+stand4dL
+stand4dR

@@ -11,6 +11,10 @@
 #include "wndControl.h"
 #include "sound.h"
 #include "timer.h"
+#include "player.h"
+#include "fsm.h"
+#include "geometry.h"
+#include "enemy.h"
 
 #include <vector>
 #include <queue>
@@ -21,3 +25,5 @@
 #include <ctime>
 #include <string>
 #include <ctime>
+
+void damageTo(GameObject* obj, int dmg);

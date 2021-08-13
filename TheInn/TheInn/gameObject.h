@@ -3,12 +3,15 @@
 #define __GAMEOBJ__
 
 #include "VECTOR.h"
+#include "geometry.h"
 #include "framework.h"
 #include "pointVector.h";
 #include "animator.h"
 #include "map.h"
 #include <string>
 #include <queue>
+
+class StateMachine;
 
 enum class DIRECTION { NONE = 0, D = 1, R = 2, RD = 3, U = 4, RU = 6, L = 8, LD = 9, LU = 12 };
 enum class ActorState { IDLE, ONMOVE, VSLASH, HSLASH, STAB };
@@ -18,10 +21,14 @@ class GameObject
 	friend class ObjectManager;
 private:
 	bool destroy;
+
+protected:
+	StateMachine* mState;
+
 public:
 	VECTOR pos;
 	VECTOR vel;
-	GameObject(POINT p = { 0, 0 }, POINT v = {0, 0}) : destroy(false)
+	GameObject(POINT p = { 0, 0 }, POINT v = {0, 0}) : destroy(false), mState(nullptr)
 	{
 		pos.x = p.x;
 		pos.y = p.y;
@@ -31,6 +38,8 @@ public:
 	virtual void draw(HDC& hdc) = 0;
 	virtual void update(float dt) { pos = dt * vel; };
 	void destroyObj() { destroy = true; }
+
+	void setState(StateMachine* state);
 };
 
 class Collider : public GameObject
@@ -54,18 +63,19 @@ public:
 class Actor : public GameObject
 {
 	friend class StateMachine;
+	friend void damageTo(GameObject* obj, int dmg);
 
 private:
 	DIRECTION dir;
 	ActorState state;
 	Collider collider;
-	int HP = 0;
 
 protected:
 	string spriteName;
 	Animation animation;
 
 public:
+	int HP;
 	Actor(POINT p = { 0, 0 }, 
 		  POINT v = { 0, 0 }, 
 		  const string spriteName = NULL, 
@@ -77,12 +87,17 @@ public:
 	void setDirection(DIRECTION dir);
 	DIRECTION getDirection() { return dir; }
 
-	void setState(ActorState st);
 	ActorState getState() { return state; }
 
+	void setSprite(string name) { spriteName = name; }
+	string getSpriteName() { return spriteName; }
+
+	void setAnimation(string name, bool repeat = true);
 	bool animationPlaying() { return animation.playing; }
 	void setRepeat() { animation.repeat = true; }
 	void unsetRepeat() { animation.repeat = false; }
+
+	void setSpeed(float f);
 
 	virtual void draw(HDC& hdc);
 	virtual void update(float dt);
@@ -126,9 +141,10 @@ private:
 	SpriteFX();
 	string SpriteName;
 	Animation animation;
+	int flag;
 
 public:
-	SpriteFX(POINT p, const string spriteName, const string aniName, DIRECTION dir);
+	SpriteFX(POINT p, const string spriteName, const string aniName, int flag = 0);
 
 	virtual void update(float dt);
 	virtual void draw(HDC& hdc);
@@ -150,7 +166,7 @@ private:
 	};
 
 	static std::map<std::string, GameObject*> objTable;
-	static std::list<GameObject*> fxList;
+	static std::list<GameObject*> objList;
 
 	static std::priority_queue<GameObject*, vector<GameObject*>, cmp> pq;
 
@@ -165,13 +181,18 @@ public:
 							  std::string SpriteName, DIRECTION dir = DIRECTION::D,
 							  int size = 1);
 
-	static void createFX(std::string spriteName, std::string aniName, POINT pos, DIRECTION dir);
+	static void createFX(std::string spriteName, std::string aniName, POINT pos, int flag = 0);
 
 	static Actor* findActor(std::string name);
+
+	static void registerObj(string, GameObject*);
 	
 	static void draw(HDC& hdc);
 
 	static void update(float dt);
+
+	static void forEachInArea(Area* area, int param, void(*func)(GameObject*, int));
+
 };
 
 #endif

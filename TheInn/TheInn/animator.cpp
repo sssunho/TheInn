@@ -79,6 +79,8 @@ void Animation::draw(HDC& hdc, int x, int y, int flag)
 {
 	AnimationManager& am = AnimationManager::getInstance();
 	SpriteManager& sm = SpriteManager::getInstance();
+	if (curFrame >= maxFrame)
+		return;
 	FrameData frame = am.animationDataMap[animationName][curFrame];
 
 	if (frame.second != "")

@@ -1,12 +1,3 @@
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
-!NONE 0 0
 !B1 0 0
 ~Slash10.ogg
 !B2 0 0

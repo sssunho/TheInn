@@ -4,7 +4,7 @@
 #include "framework.h"
 #include <cmath>
 
-const float PI = atan(1) * 4;
+const float PI = atanf(1) * 4;
 
 class VECTOR
 {
@@ -26,7 +26,7 @@ public:
 		VECTOR temp = { x - v.x, y - v.y };
 		return temp;
 	}
-	double operator*(VECTOR v)
+	float operator*(VECTOR v)
 	{
 		return x*v.x + y*v.y;
 	}
@@ -39,7 +39,34 @@ public:
 
 	operator const POINT() const
 	{
-		return POINT({ (long)round(x), (long)round(y) });
+		return POINT({ (long)::round(x), (long)::round(y) });
+	}
+
+	float getScalar()
+	{
+		return sqrt(x*x + y * y);
+	}
+
+	VECTOR getUnit()
+	{
+		return (1 / getScalar())*(*this);
+	}
+
+	VECTOR rotate(double r)
+	{
+		return { cosf(r)*x - sinf(r)*y, sinf(r)*x + cosf(r)*y };
+	}
+
+	VECTOR round()
+	{
+		return { ::round(x), ::round(y) };
+	}
+
+	float getRad()
+	{
+		if (x == 0)
+			return y > 0 ? PI / 2 : -PI / 2;
+		return PI * (x < 0) + atan(y / x);
 	}
 };
 

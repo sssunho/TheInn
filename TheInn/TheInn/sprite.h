@@ -48,6 +48,9 @@ public:
 
 	void draw(const HDC&, int x, int y, int flag = 0);
 
+	int getWidth() { return width; }
+	int getHeight() { return height; }
+
 };
 
 class SpriteManager
@@ -85,7 +88,6 @@ public:
 	Sprite getSprite(string imageFile, string subSprite = "");
 
 	bool hasThisImage(string imageName);
-	
 };
 
 
