@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 
+#define L_KEY_STATE (GetAsyncKeyState(0x41))
+#define R_KEY_STATE (GetAsyncKeyState(0x44))
+#define U_KEY_STATE (GetAsyncKeyState(0x57))
+#define D_KEY_STATE (GetAsyncKeyState(0x53))
+
 enum class DIRECTION;
 
 void SetClientSize(HWND hWnd, int nDestClientWidth, int nDestClientHeight);

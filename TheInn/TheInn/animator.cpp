@@ -84,7 +84,7 @@ void Animation::draw(HDC& hdc, int x, int y, int flag)
 	FrameData frame = am.animationDataMap[animationName][curFrame];
 
 	if (frame.second != "")
-		SoundManager::getSE(frame.second)->play();
+		SoundManager::playSE(frame.second);
 
 	for (int i = 0; i < frame.first.size(); i++)
 	{

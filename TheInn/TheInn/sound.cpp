@@ -1,9 +1,13 @@
 #include "sound.h"
 #include "framework.h"
+#include <fmod.h>
 
 FMOD_SYSTEM* CSound::g_sound_system;
 map<string, CSound*> SoundManager::bgmTable;
 map<string, CSound*> SoundManager::seTable;
+
+CSound* SoundManager::loadedBgm;
+std::list<CSound*> SoundManager::seList;
 
 CSound::CSound(const string path, bool loop) {
 	if (loop) {
@@ -81,6 +85,13 @@ int CSound::volumeDown() {
 	return 0;
 }
 
+bool CSound::isPlaying()
+{
+	FMOD_BOOL playing;
+	FMOD_Channel_IsPlaying(m_channel, &playing);
+	return playing;
+}
+
 
 int CSound::Update() {
 	FMOD_Channel_IsPlaying(m_channel, &m_bool);
@@ -92,27 +103,55 @@ int CSound::Update() {
 	return 0;
 }
 
-void SoundManager::init()
+void SoundManager::update()
 {
-	vector<wstring> fileList;
-	GetFiles(fileList, L"Audio\\BGM", false);
-	for (int i = 0; i < fileList.size(); i++)
+	list<CSound*>::iterator it;
+	for (it = seList.begin(); it != seList.end(); )
 	{
-		int j;
-		string multiByteName;
-		multiByteName.assign(fileList[i].begin(), fileList[i].end());
-		for (j = multiByteName.size() - 1; j >= 0 && multiByteName[j] != '\\'; j--);
-		bgmTable.insert(pair<string, CSound*>(multiByteName.c_str() + j + 1, new CSound(multiByteName, true)));
+		if ((*it)->isPlaying())
+		{
+			(*it)->Update();
+			it++;
+		}
+		else
+		{
+			delete *it;
+			it = seList.erase(it);
+		}
 	}
-	fileList.clear();
+	if (loadedBgm)
+		loadedBgm->Update();
+}
 
-	GetFiles(fileList, L"Audio\\SE", false);
-	for (int i = 0; i < fileList.size(); i++)
-	{
-		int j;
-		string multiByteName;
-		multiByteName.assign(fileList[i].begin(), fileList[i].end());
-		for (j = multiByteName.size() - 1; j >= 0 && multiByteName[j] != '\\'; j--);
-		seTable.insert(pair<string, CSound*>(multiByteName.c_str() + j + 1, new CSound(multiByteName, false)));
-	}
+void SoundManager::playSE(string name)
+{
+	CSound* inst = new CSound("Audio\\SE\\" + name, false);
+	inst->play();
+	seList.push_back(inst);
+}
+
+void SoundManager::loadBGM(string name)
+{
+	if (loadedBgm)
+		releaseBGM();
+	loadedBgm = new CSound("Audio\\BGM\\" + name, true);
+}
+
+void SoundManager::playBGM()
+{
+	if (loadedBgm)
+		loadedBgm->play();
+}
+
+void SoundManager::pauseBGM()
+{
+	if (loadedBgm)
+		loadedBgm->pause();
+}
+
+void SoundManager::releaseBGM()
+{
+	if (loadedBgm)
+		delete loadedBgm;
+	loadedBgm = nullptr;
 }

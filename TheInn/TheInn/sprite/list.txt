@@ -1,7 +1,13 @@
-6
+12
 swordman
 slash
 bowmaster
 knight
 slime
 slimeHit
+hitten
+dust
+darkness
+magician
+emotion
+hp

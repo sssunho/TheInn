@@ -1,4 +1,5 @@
 #include "framework.h"
+#include "node.h"
 #include "headers.h"
 
 using namespace std;
@@ -258,6 +259,12 @@ Map* MapManager::loadMap(string mapName)
 Map::Map(string name, Bitmap * l1, Bitmap * l2, Bitmap * l3, Bitmap * grid) : mapName(name)
 {
 	layer[0] = l1; layer[1] = l2; layer[2] = l3; Map::grid = grid;
+	cellNy = layer[0]->GetWidth() / CELL_PIXEL;
+	cellNx = layer[0]->GetHeight() / CELL_PIXEL;
+	graph = vector<vector<Node*>>(cellNy, vector<Node*>(cellNx));
+	for (int i = 0; i < cellNy; i++)
+		for (int j = 0; j < cellNx; j++)
+			graph[i][j] = new Node({ j, i });
 }
 
 void Map::draw(HDC& hdc, POINT pos, int l)
@@ -273,22 +280,47 @@ void Map::draw(HDC& hdc, POINT pos, int l)
 		pos.x, pos.y, clientRect.right, clientRect.bottom, UnitPixel);
 }
 
-bool Map::isBlock(POINT p)
+bool Map::isBlock(POINT p) const
 {
-	if (p.x < 0 || p.y < 0 ||
-		p.x >= layer[0]->GetWidth() || p.y >= layer[0]->GetHeight())
+	if (p.x < 0 || p.y < 0 || p.x >= cellNx || p.y >= cellNy)
 		return true;
-	
-	return objectMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] & cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL]
-		   || blockMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] & cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
+	return objectMap[p.y / 4][p.x / 4] & cellMask[p.y % 4][p.x % 4]
+		|| blockMap[p.y / 4][p.x / 4] & cellMask[p.y % 4][p.x % 4];
 }
 
 void Map::setBlock(POINT p)
 {
-	objectMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] |= cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
+	if (p.x < 0 || p.y < 0 || p.x >= cellNx || p.y >= cellNy)
+		return;
+	objectMap[p.y / 4][p.x / 4] |= cellMask[p.y % 4][p.x % 4];
 }
 
 void Map::unsetBlock(POINT p)
 {
-	objectMap[p.y / TILE_PIXEL][p.x / TILE_PIXEL] &= ~cellMask[(p.y / CELL_PIXEL) % TILE_CELL][(p.x / CELL_PIXEL) % TILE_CELL];
+	if (p.x < 0 || p.y < 0 || p.x >= cellNx || p.y >= cellNy)
+		return;
+	objectMap[p.y / 4][p.x / 4] &= ~cellMask[p.y % 4][p.x % 4];
+}
+
+bool Map::isBlock(POINT p, int size) const
+{
+	for (int i = 0; i < size; i++)
+		for(int j = 0 ; j < size ; j++)
+			if (isBlock(p+ POINT({i, j})))
+				return true;
+	return false;
+}
+
+void Map::setBlock(POINT p, int size)
+{
+	for (int i = 0; i < size; i++)
+		for (int j = 0; j < size; j++)
+			setBlock(p + POINT({ i, j }));
+}
+
+void Map::unsetBlock(POINT p, int size)
+{
+	for (int i = 0; i < size; i++)
+		for (int j = 0; j < size; j++)
+			unsetBlock(p + POINT({ i, j }));
 }

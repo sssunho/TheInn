@@ -4,14 +4,15 @@
 class Area
 {
 public:
+	Area(VECTOR c) : c(c) {}
+	VECTOR c;
 	virtual bool isIn(VECTOR p) = 0;
 };
 
 class Circle : public Area
 {
 public:
-	Circle(VECTOR c, float r) : c(c), r(r) {}
-	VECTOR c;
+	Circle(VECTOR c = { 0, 0 }, float r = 0.0f) : Area(c), r(r) {}
 	float r;
 
 	virtual bool isIn(VECTOR p)
@@ -23,7 +24,7 @@ public:
 class Sector : public Circle
 {
 public:
-	Sector(VECTOR c, float r, float dir = 0, float rng = 0) : 
+	Sector(VECTOR c = { 0, 0 }, float r = 0.0f, float dir = 0, float rng = 0) :
 		Circle(c, r), direction(dir), range(rng) {}
 
 	float direction;

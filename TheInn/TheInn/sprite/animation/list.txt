@@ -43,3 +43,13 @@ stand4dF
 stand4dB
 stand4dL
 stand4dR
+walk4dL
+walk4dR
+walk4dF
+walk4dB
+hitten
+dust
+darkness
+darkness-charge
+lost
+discover

@@ -4,7 +4,7 @@
 using namespace std;
 extern RECT clientRect;
 POINT Camera::pos = { 0, 0 };
-int Camera::margin = 0;
+int Camera::margin = 30;
 
 extern HDC hMainDC;
 
@@ -12,9 +12,11 @@ map<string, GameObject*> ObjectManager::objTable = map<string, GameObject*>();
 list<GameObject*> ObjectManager::objList;
 priority_queue<GameObject*, vector<GameObject*>, ObjectManager::cmp> ObjectManager::pq;
 
-Actor::Actor(POINT p, POINT v, const string spriteName, DIRECTION dir, int size)
+Actor::Actor(POINT p, POINT v, const string spriteName, DIRECTION dir, int size, int hp)
 	: GameObject(p, v), dir(DIRECTION::D), spriteName(spriteName)
 {
+	HP = hp;
+	MaxHP = hp;
 	collider.pos = this->pos;
 	collider.owner = this;
 	collider.size = size;
@@ -22,7 +24,7 @@ Actor::Actor(POINT p, POINT v, const string spriteName, DIRECTION dir, int size)
 	Sprite sprite = SpriteManager::getInstance().getSprite(spriteName, "standF");
 	int width = sprite.getWidth();
 	int height = sprite.getHeight();
-	spriteOffset = { (size / 2)*CELL_PIXEL, height / 2 - (size / 2)*CELL_PIXEL };
+	spriteOffset = { 0, - height / 2 + (size / 2)*CELL_PIXEL };
 }
 
 void Actor::setAnimation(string name, bool repeat)
@@ -79,29 +81,32 @@ void Actor::update(float dt)
 {
 	animation.update();
 	VECTOR ds = dt * vel;
-	VECTOR remain = { abs(ds.x), abs(ds.y) };
+	VECTOR sign = {ds.x >= 0 ? 1.0f : -1.0f, ds.y >= 0 ? 1.0f : -1.0f};
 	collider.unset();
-	while (remain.x > 0)
+
+	while (ds.x * sign.x > 0 || ds.y * sign.y > 0)
 	{
-		float unit = abs(ds.x) > CELL_PIXEL ? (ds.x > 0 ? 1 : -1) * CELL_PIXEL : ds.x;
-		collider.pos.x += unit;
-		ds.x -= unit;
-		remain.x -= abs(unit);
+		VECTOR unit;
+		if (ds.x * sign.x <= 0)
+			unit.x = 0;
+		else
+			unit.x = abs(ds.x) > CELL_PIXEL ? (sign.x) * CELL_PIXEL : ds.x;
+
+		if (ds.y * sign.y <= 0)
+			unit.y = 0;
+		else
+			unit.y = abs(ds.y) > CELL_PIXEL ? (sign.y) * CELL_PIXEL : ds.y;
+
+		collider.pos = collider.pos + ds;
+		ds = ds - unit;
+
 		if (collider.collision())
 			break;
-		pos.x = collider.pos.x;
-	}
-	while (remain.y > 0)
-	{
-		float unit = abs(ds.y) > CELL_PIXEL ? (ds.y > 0 ? 1 : -1) * CELL_PIXEL : ds.y;
-		collider.pos.y += unit;
-		ds.y -= unit;
-		remain.y -= abs(unit);
-		if (collider.collision())
-			break;
-		pos.y = collider.pos.y;
+		pos = collider.pos;
+
 	}
 	collider.update(dt);
+	collider.set();
 }
 
 bool Camera::isIn(POINT p)
@@ -132,14 +137,23 @@ void Camera::Bound(POINT p)
 		pos.y = height - clientRect.bottom / 2;
 	else
 		pos.y = p.y;
+
+	if (width < 640)
+		pos.x = 320;
+	if (height < 480)
+		pos.y = 240;
+
 }
 
 bool Collider::collision()
 {
+
 	for (int i = 0; i < size; i++)
 		for (int j = 0; j < size; j++)
-			if (MapManager::loadedMap->isBlock(pos + POINT({ i * CELL_PIXEL, j * CELL_PIXEL })))
+		{
+			if (MapManager::loadedMap->isBlock(pixelToCell(POINT(pos)) + POINT{ i, j }))
 				return true;
+		}
 	return false;
 }
 
@@ -147,14 +161,18 @@ void Collider::set()
 {
 	for (int i = 0; i < size; i++)
 		for (int j = 0; j < size; j++)
-			MapManager::loadedMap->setBlock(pos + POINT({ i * CELL_PIXEL, j * CELL_PIXEL }));
+		{
+			MapManager::loadedMap->setBlock(POINT(pixelToCell(pos)) + POINT{ i, j });
+		}
 }
 
 void Collider::unset()
 {
 	for (int i = 0; i < size; i++)
 		for (int j = 0; j < size; j++)
-			MapManager::loadedMap->unsetBlock(pos + POINT({ i * CELL_PIXEL, j * CELL_PIXEL }));
+		{
+			MapManager::loadedMap->unsetBlock(pixelToCell(pos) + POINT{ i, j });
+		}
 }
 
 void Collider::update(float dt)
@@ -176,7 +194,7 @@ Actor* ObjectManager::createActor(string name, POINT pos, VECTOR vel,
 void ObjectManager::createFX(string spriteName, string aniName, POINT pos, int flag)
 {
 	SpriteFX* instance = new SpriteFX(pos, spriteName, aniName, flag);
-	objList.push_back(instance);
+	objList.push_front(instance);
 	pq.push(instance);
 }
 
@@ -194,6 +212,11 @@ void ObjectManager::registerObj(string name, GameObject * obj)
 	objList.push_back(obj);
 }
 
+void ObjectManager::registerObj(GameObject * obj)
+{
+	objList.push_back(obj);
+}
+
 void ObjectManager::draw(HDC& hdc)
 {
 	while (!pq.empty())
@@ -206,7 +229,6 @@ void ObjectManager::draw(HDC& hdc)
 
 void ObjectManager::update(float dt)
 {
-	map<string, GameObject*>::iterator it;
 	list<GameObject*>::iterator lit;
 
 	for (lit = objList.begin(); lit != objList.end(); )
@@ -249,6 +271,36 @@ void ObjectManager::forEachInArea(Area * area, int param, void(*func)(GameObject
 	}
 }
 
+void ObjectManager::releaseAll()
+{
+	list<GameObject*>::iterator it;
+	map<string, GameObject*>::iterator tit;
+	
+	while (!pq.empty())
+		pq.pop();
+
+	for (tit = objTable.begin(); tit != objTable.end();)
+	{
+		if (dynamic_cast<Player*>(tit->second))
+		{
+			tit++;
+			continue;
+		}
+		tit = objTable.erase(tit);
+	}
+
+	for (it = objList.begin(); it != objList.end();)
+	{
+		if (dynamic_cast<Player*>(*it))
+		{
+			it++;
+			continue;
+		}
+		delete (*it);
+		it = objList.erase(it);
+	}
+}
+
 SpriteFX::SpriteFX(POINT p, const string spriteName, const string aniName, int flag)
 	: GameObject(p, { 0, 0 }), flag(flag)
 {
@@ -276,12 +328,25 @@ void GameObject::setState(StateMachine * state)
 	}
 }
 
-void damageTo(GameObject* target, int damage)
+DIRECTION getDirectionFromVector(VECTOR v)
 {
-	Enemy* enemy;
-	if(enemy = dynamic_cast<Enemy*>(target))
-	{
-		enemy->HP -= damage;
-		enemy->setState(new HIT);
-	}
+	float rad = v.getRad();
+	if (rad >= (-PI / 4) && rad < (PI / 4))
+		return DIRECTION::R;
+	else if (rad >= (PI / 4) && rad < (PI * 3 / 4))
+		return DIRECTION::D;
+	else if (rad >= (-PI * 3 / 4) && rad < (-PI / 4))
+		return DIRECTION::U;
+	else
+		return DIRECTION::L;
+}
+
+void drawHP(HDC& hdc, POINT p, int max, int hp)
+{
+	if (max < 0 || hp < 0)
+		return;
+	static Sprite bar = SpriteManager::getInstance().getSprite("hp");
+	float ratio = hp / (float)max;
+	POINT drawPoint = pixelToScreen(p);
+	bar.draw(hdc, drawPoint.x, drawPoint.y - 40, ratio, 1);
 }

@@ -16,6 +16,9 @@
     <Filter Include="소스 파일\GameObject">
       <UniqueIdentifier>{8af69a6f-a615-48d8-ad39-44152d1280b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\pathfind">
+      <UniqueIdentifier>{3cd176b3-bba6-494f-a66f-e0da28759279}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -81,6 +84,18 @@
     <ClInclude Include="geometry.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="node.h">
+      <Filter>헤더 파일\pathfind</Filter>
+    </ClInclude>
+    <ClInclude Include="pathFind.h">
+      <Filter>헤더 파일\pathfind</Filter>
+    </ClInclude>
+    <ClInclude Include="projectile.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="magician.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TheInn.cpp">
@@ -126,6 +141,15 @@
       <Filter>소스 파일\GameObject</Filter>
     </ClCompile>
     <ClCompile Include="enemy.cpp">
+      <Filter>소스 파일\GameObject</Filter>
+    </ClCompile>
+    <ClCompile Include="pathFind.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="projectile.cpp">
+      <Filter>소스 파일\GameObject</Filter>
+    </ClCompile>
+    <ClCompile Include="magician.cpp">
       <Filter>소스 파일\GameObject</Filter>
     </ClCompile>
   </ItemGroup>

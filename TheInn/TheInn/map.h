@@ -15,16 +15,20 @@
 
 class Autotile;
 class MapManager;
+class Node;
 
 class Map
 {
 	friend class MapManager;
 private:
+	int cellNx;
+	int cellNy;
 	string mapName;
 	Bitmap* grid;
 	Bitmap* layer[3];
 	std::vector<std::vector<int>> blockMap;
 	std::vector<std::vector<int>> objectMap;
+	std::vector<std::vector<Node*>> graph;
 
 public:
 	Map(string name, Bitmap* l1, Bitmap* l2, Bitmap* l3, Bitmap* grid = NULL);
@@ -38,12 +42,19 @@ public:
 
 	void draw(HDC& hdc, POINT pos, int layer);
 
-	int getWidth() { return layer[0]->GetWidth(); }
-	int getHeight() { return layer[0]->GetHeight(); }
+	int getWidth() const { return layer[0]->GetWidth(); }
+	int getHeight() const { return layer[0]->GetHeight(); }
 
-	bool isBlock(POINT p);
+	bool isBlock(POINT p) const;
 	void setBlock(POINT p);
 	void unsetBlock(POINT p);
+
+	bool isBlock(POINT p, int size) const;
+	void setBlock(POINT p, int size);
+	void unsetBlock(POINT p, int size);
+
+	friend Node* findPath(POINT start, POINT end, int size);
+	friend void updateNode(POINT pos, POINT end, POINT prev, int size);
 
 	~Map()
 	{
@@ -75,10 +86,10 @@ private:
 	static std::map<std::string, TilesetData> tilesetTable;
 	static std::map<std::string, Map::MapData> mapTable;
 
-	void initMapTable();
-	void initTilesetTable();
+	static void initMapTable();
+	static void initTilesetTable();
 
-	void drawUnitTile(Graphics& g, string mapName, int layer, POINT& srcPoint, Rect& dest);
+	static void drawUnitTile(Graphics& g, string mapName, int layer, POINT& srcPoint, Rect& dest);
 	
 public:
 
@@ -89,7 +100,7 @@ public:
 	}
 	
 	static Map* loadedMap;
-	Map* loadMap(string mapName);
+	static Map* loadMap(string mapName);
 	static POINT getLayerData(string mapName, int layer, POINT p)
 	{
 		if (p.x >= mapTable[mapName].cellData[0][0].size() || p.y >= mapTable[mapName].cellData[0].size()

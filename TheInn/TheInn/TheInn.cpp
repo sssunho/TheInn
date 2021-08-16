@@ -8,6 +8,8 @@
 
 using namespace Gdiplus;
 
+void(*UPDATE)();
+
 #define MAX_LOADSTRING 100
 
 using std::shared_ptr;
@@ -67,6 +69,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	HBITMAP hBitmap = CreateCompatibleBitmap(hMainDC, clientRect.right, clientRect.bottom);
 	SelectObject(hBufferDC, hBitmap);
 
+	UPDATE = initStage1;
+
     // 기본 메시지 루프입니다:
     while (gbMsgLoop)
     {
@@ -77,7 +81,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
 		else
 		{
-			test();
+			UPDATE();
 		}
     }
 

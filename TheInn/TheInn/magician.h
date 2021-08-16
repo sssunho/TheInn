@@ -1,95 +1,87 @@
 #pragma once
-#include "gameObject.h"
-#include "timer.h"
+#include "headers.h"
 
-class StateMachine
-{
-public:
-	virtual StateMachine* setState(GameObject* obj, StateMachine * state) = 0;
-	virtual void update(GameObject* obj, float dt);
-	virtual void enter(GameObject* obj) {}
-	virtual void exit(GameObject* obj) {}
-};
-
-class PlayerIDLE : public StateMachine
-{
-public:
-	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
-	virtual void update(GameObject* obj, float dt);
-	virtual void enter(GameObject* obj);
-};
-
-class PlayerMove : public StateMachine
-{
-public:
-	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
-	virtual void update(GameObject* obj, float dt);
-	virtual void enter(GameObject* obj);
-};
-
-class Attack : public StateMachine
-{
-protected :
-	TIMER timer;
-	bool pretime = true;
-	bool hittime = true;
-};
-
-class PlayerCombo1 : public Attack
+class Magician : public Enemy
 {
 private:
-public:
-	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
-	virtual void update(GameObject* obj, float dt);
-	virtual void enter(GameObject* obj);
-};
-
-class PlayerCombo2 : public Attack
-{
-
-public:
-	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
-	virtual void update(GameObject* obj, float dt);
-	virtual void enter(GameObject* obj);
-};
-
-class PlayerCombo3 : public Attack
-{
-
-public:
-	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
-	virtual void update(GameObject* obj, float dt);
-	virtual void enter(GameObject* obj);
-};
-
-class PlayerHIT : public StateMachine
-{
-protected:
 	TIMER timer;
 
 public:
+	Animation chargeAni;
+	Magician(VECTOR p);
+	Magician(VECTOR p, DIRECTION d, float range);
+	virtual void update(float dt);
+	virtual void draw(HDC& hdc);
+};
+
+class MagicianIDLE : public StateMachine
+{
+private:
+	TIMER timer;
+	TIMER patrolTimer;
+
+public:
 	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
 	virtual void update(GameObject* obj, float dt);
 	virtual void enter(GameObject* obj);
 };
 
-class HIT : public StateMachine
+class MagicianOnMove : public StateMachine
 {
-	TIMER timer;
-	string oldSprite;
+public:
+	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
+	virtual void update(GameObject* obj, float dt);
+	virtual void enter(GameObject* obj);
+};
+
+class MagicianPatrol : public MagicianOnMove
+{
+	TIMER patrolTimer;
+public:
+	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
+	virtual void update(GameObject* obj, float dt);
+};
+
+class MagicianHIT : public StateMachine
+{
+private:
 	int damage;
+	TIMER timer;
+
 public:
-	HIT(int dmg = 0) : damage(dmg) {};
+	MagicianHIT(int damage = 10) : damage(damage) {}
 	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
 	virtual void update(GameObject* obj, float dt);
 	virtual void enter(GameObject* obj);
-	virtual void exit(GameObject* obj);
 };
 
-class PlayerDodge : public StateMachine
+class MagicianyKnockBack : public StateMachine
 {
 private:
 	TIMER timer;
+
+public:
+	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
+	virtual void update(GameObject* obj, float dt);
+	virtual void enter(GameObject* obj);
+
+};
+
+class MagicianAtk : public StateMachine
+{
+private:
+	TIMER timer;
+	bool posttime;
+
+public:
+	MagicianAtk() : timer(), posttime(false) {}
+	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
+	virtual void update(GameObject* obj, float dt);
+	virtual void enter(GameObject* obj);
+};
+
+class MagicianDead : public StateMachine
+{
 public:
 	virtual StateMachine* setState(GameObject* obj, StateMachine* state);
 	virtual void update(GameObject* obj, float dt);

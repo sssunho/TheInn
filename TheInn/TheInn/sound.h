@@ -34,6 +34,8 @@ public:
 	int volumeUp();
 	int volumeDown();
 
+	bool isPlaying();
+
 	int Update();
 };
 
@@ -47,10 +49,16 @@ private:
 	static std::map<string, CSound*> bgmTable;
 	static std::map<string, CSound*> seTable;
 
+	static CSound* loadedBgm;
+	static std::list<CSound*> seList;
+
 public:
-	static void init();
-	static CSound* getBGM(std::string name) { return bgmTable[name]; }
-	static CSound* getSE(std::string name) { return seTable[name]; }
+	static void update();
+	static void playSE(string name);
+	static void loadBGM(string name);
+	static void playBGM();
+	static void pauseBGM();
+	static void releaseBGM();
 
 };
 #endif

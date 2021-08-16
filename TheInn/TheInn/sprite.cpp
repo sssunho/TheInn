@@ -181,3 +181,12 @@ void Sprite::draw(const HDC& hdc, int x, int y, int flag)
 	}
 	g.DrawImage(img, dest, cx, cy, width, height, UnitPixel);
 }
+
+void Sprite::draw(const HDC & hdc, int x, int y, float rx, float ry)
+{
+	if (img == NULL)
+		return;
+	Graphics g(hdc);
+	Rect dest = { x - width / 2, y - height / 2, (int)round(width * rx), (int)round(height * ry) };
+	g.DrawImage(img, dest, cx, cy, width, height, UnitPixel);
+}

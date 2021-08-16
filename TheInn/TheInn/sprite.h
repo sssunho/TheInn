@@ -47,6 +47,8 @@ public:
 	}
 
 	void draw(const HDC&, int x, int y, int flag = 0);
+	void draw(const HDC&, int x, int y, float rx, float ry);
+
 
 	int getWidth() { return width; }
 	int getHeight() { return height; }

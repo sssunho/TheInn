@@ -162,7 +162,11 @@
     <ClInclude Include="enemy.h" />
     <ClInclude Include="fsm.h" />
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="magician.h" />
+    <ClInclude Include="node.h" />
+    <ClInclude Include="pathFind.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="projectile.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="coordTransform.h" />
     <ClInclude Include="framework.h" />
@@ -187,9 +191,12 @@
     <ClCompile Include="fsm.cpp" />
     <ClCompile Include="gameObject.cpp" />
     <ClCompile Include="gameplay.cpp" />
+    <ClCompile Include="magician.cpp" />
     <ClCompile Include="map.cpp" />
+    <ClCompile Include="pathFind.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="pointVector.cpp" />
+    <ClCompile Include="projectile.cpp" />
     <ClCompile Include="sound.cpp" />
     <ClCompile Include="sprite.cpp" />
     <ClCompile Include="TheInn.cpp" />

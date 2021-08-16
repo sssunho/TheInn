@@ -12,9 +12,12 @@
 #include "sound.h"
 #include "timer.h"
 #include "player.h"
-#include "fsm.h"
 #include "geometry.h"
+#include "fsm.h"
 #include "enemy.h"
+#include "pathFind.h"
+#include "projectile.h"
+#include "magician.h"
 
 #include <vector>
 #include <queue>
@@ -25,5 +28,3 @@
 #include <ctime>
 #include <string>
 #include <ctime>
-
-void damageTo(GameObject* obj, int dmg);

@@ -35,6 +35,13 @@ public:
 		vel.x = v.x;
 		vel.y = v.y;
 	}
+
+	virtual ~GameObject()
+	{
+		if (mState)
+			delete mState;
+	}
+
 	virtual void draw(HDC& hdc) = 0;
 	virtual void update(float dt) { pos = dt * vel; };
 	void destroyObj() { destroy = true; }
@@ -56,6 +63,8 @@ public:
 	virtual void draw(HDC& hdc) {};
 	virtual void update(float dt);
 
+	int getSize() const { return size; }
+
 	void set();
 	void unset();
 };
@@ -63,28 +72,35 @@ public:
 class Actor : public GameObject
 {
 	friend class StateMachine;
-	friend void damageTo(GameObject* obj, int dmg);
+	friend void slashAtk(GameObject* obj, int dmg);
 
 private:
-	DIRECTION dir;
 	ActorState state;
-	Collider collider;
 
 protected:
+	Collider collider;
+	DIRECTION dir;
 	string spriteName;
 	Animation animation;
 
 public:
+	int MaxHP;
 	int HP;
 	Actor(POINT p = { 0, 0 }, 
 		  POINT v = { 0, 0 }, 
 		  const string spriteName = NULL, 
 		  DIRECTION dir = DIRECTION::D,
-		  int size = 1);
+		  int size = 1,
+		  int hp = 40);
+
+	virtual ~Actor() 
+	{
+		collider.unset();
+	}
 
 	POINT spriteOffset;
 
-	void setDirection(DIRECTION dir);
+	virtual void setDirection(DIRECTION dir);
 	DIRECTION getDirection() { return dir; }
 
 	ActorState getState() { return state; }
@@ -186,13 +202,21 @@ public:
 	static Actor* findActor(std::string name);
 
 	static void registerObj(string, GameObject*);
-	
+
+	static void registerObj(GameObject*);
+
 	static void draw(HDC& hdc);
 
 	static void update(float dt);
 
 	static void forEachInArea(Area* area, int param, void(*func)(GameObject*, int));
 
+	static void releaseAll();
+
 };
+
+DIRECTION getDirectionFromVector(VECTOR v);
+
+void drawHP(HDC & hdc, POINT p, int max, int hp);
 
 #endif

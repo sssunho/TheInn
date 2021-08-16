@@ -15,6 +15,7 @@ public:
 	VECTOR() : x(0), y(0) {};
 	VECTOR(float _e1, float _e2) : x(_e1), y(_e2) {};
 	VECTOR(float r);
+	VECTOR(POINT p) { x = ::round(p.x); y = ::round(p.y); }
 
 	VECTOR operator+(VECTOR v)
 	{
@@ -64,9 +65,9 @@ public:
 
 	float getRad()
 	{
-		if (x == 0)
-			return y > 0 ? PI / 2 : -PI / 2;
-		return PI * (x < 0) + atan(y / x);
+		if (getScalar() == 0.0f)
+			return 0.0f;
+		return (y < 0.0f ? -1.0f : 1.0f) * acosf(x / getScalar());
 	}
 };
 

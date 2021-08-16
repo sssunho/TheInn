@@ -21,6 +21,7 @@ class Animation
 	friend class AnimationObj;
 	friend class Actor;
 	friend class SpriteFX;
+	friend class chargeAni;
 
 private:
 	struct SpriteData
@@ -41,9 +42,11 @@ private:
 	bool repeat;
 	bool collapse;
 		
-	Animation() : 
+
+public:
+	Animation() :
 		animationName(), spriteName(),
-		curFrame(0), maxFrame(0), 
+		curFrame(0), maxFrame(0),
 		playing(true), repeat(false), collapse(false) {}
 
 	Animation(string spName, string aniName) :
@@ -51,7 +54,6 @@ private:
 		curFrame(0), maxFrame(0),
 		playing(true), repeat(false), collapse(false) {}
 
-public:
 	Animation(const Animation& ref)
 	{
 		animationName = ref.animationName;
